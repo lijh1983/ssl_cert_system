@@ -38,10 +38,55 @@ JWT_SECRET=your-super-secret-jwt-key
 
 ### 启动开发服务器
 
+#### 方法1: 标准npm脚本（推荐）
 ```bash
-# 开发模式（热重载）
+# 启动开发服务器
 npm run dev
 
+# 其他开发命令
+npm run dev:simple    # 运行简化版应用
+npm run dev:full      # 运行完整版应用（含数据库）
+npm run dev:debug     # 启用Node.js调试器
+npm run dev:verbose   # 详细日志模式
+```
+
+#### 方法2: 进程管理脚本（稳定运行）
+```bash
+# 后台启动服务器
+npm run dev:start
+# 或者
+./scripts/dev-server.sh start
+
+# 检查服务器状态
+npm run dev:status
+
+# 查看日志
+npm run dev:logs
+
+# 停止服务器
+npm run dev:stop
+
+# 重启服务器
+npm run dev:restart
+```
+
+#### 方法3: PM2进程管理器（类生产环境）
+```bash
+# 全局安装PM2（可选）
+npm install -g pm2
+
+# 使用PM2启动
+pm2 start ecosystem.config.js --env development
+
+# 监控
+pm2 monit
+
+# 停止
+pm2 stop ssl-cert-backend-dev
+```
+
+#### 其他命令
+```bash
 # 构建项目
 npm run build
 
@@ -235,6 +280,61 @@ npm start
 ## 📞 健康检查
 
 访问 `http://localhost:3000/health` 检查服务状态。
+
+## 🐛 故障排除
+
+### 常见问题
+
+1. **服务器无法启动**
+   ```bash
+   # 检查依赖是否安装
+   npm run deps
+
+   # 重新安装依赖
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
+
+2. **端口被占用**
+   ```bash
+   # 检查端口3000的使用情况
+   lsof -i :3000
+
+   # 终止占用端口3000的进程
+   kill -9 $(lsof -t -i:3000)
+
+   # 或使用不同端口
+   PORT=3001 npm run dev
+   ```
+
+3. **TypeScript编译错误**
+   ```bash
+   # 检查TypeScript配置
+   npx tsc --noEmit
+
+   # 清理构建
+   npm run build:clean
+   ```
+
+4. **进程管理问题**
+   ```bash
+   # 检查服务器状态
+   npm run dev:status
+
+   # 查看日志
+   npm run dev:logs
+
+   # 强制停止所有相关进程
+   pkill -f "ssl-cert-system-backend"
+   ```
+
+### 日志文件
+- 开发日志: `backend/logs/dev-server.log`
+- PM2日志: `backend/logs/pm2-*.log`
+
+### 健康检查
+- 健康检查端点: `http://localhost:3000/health`
+- 快速检查: `npm run health`
 
 ## 🤝 贡献
 
