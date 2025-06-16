@@ -268,12 +268,12 @@ const loadData = async () => {
 
     // 更新最近证书
     if (certificatesRes.success) {
-      recentCertificates.value = certificatesRes.data.items || []
+      recentCertificates.value = certificatesRes.data.certificates || certificatesRes.data.items || []
     }
 
     // 更新最近服务器
     if (serversRes.success) {
-      recentServers.value = serversRes.data.items || []
+      recentServers.value = serversRes.data.servers || serversRes.data.items || []
     }
   } catch (error: any) {
     console.error('加载数据失败:', error)

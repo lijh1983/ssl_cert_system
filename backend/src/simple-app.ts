@@ -42,6 +42,16 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API健康检查端点
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // API根路径
 app.get('/api', (req, res) => {
   res.json({
@@ -122,19 +132,24 @@ app.get('/api/monitors/overview', (req, res) => {
     success: true,
     message: '监控概览（演示版本）',
     data: {
-      certificates: {
-        total: 1,
-        issued: 1,
-        pending: 0,
-        expiring_soon: 0,
-        expired: 0
-      },
-      servers: {
-        total: 1,
-        online: 1,
-        offline: 0,
-        error: 0
-      }
+      totalCertificates: 1,
+      expiringSoon: 0,
+      expired: 0,
+      healthy: 1,
+      onlineServers: 1
+    }
+  });
+});
+
+app.get('/api/monitors/stats', (req, res) => {
+  res.json({
+    success: true,
+    message: '系统统计（演示版本）',
+    data: {
+      totalCertificates: 1,
+      expiringSoon: 0,
+      expired: 0,
+      onlineServers: 1
     }
   });
 });
