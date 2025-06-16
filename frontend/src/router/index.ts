@@ -25,6 +25,11 @@ const routes = [
         component: () => import('@/views/Certificates.vue')
       },
       {
+        path: '/certificates/:id',
+        name: 'CertificateDetail',
+        component: () => import('@/views/CertificateDetail.vue')
+      },
+      {
         path: '/servers',
         name: 'Servers',
         component: () => import('@/views/Servers.vue')

@@ -116,14 +116,91 @@ app.get('/api/certificates', (req, res) => {
         {
           id: 1,
           domain: 'example.com',
+          alt_domains: 'www.example.com,api.example.com',
           status: 'issued',
+          issuer: 'Let\'s Encrypt',
+          encryption_type: 'ECC',
+          auto_renew: true,
+          valid_from: '2024-01-01T00:00:00Z',
           valid_to: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-          days_remaining: 90
+          days_remaining: 90,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-15T10:30:00Z'
         }
       ],
       total: 1
     }
   });
+});
+
+// 获取单个证书详情
+app.get('/api/certificates/:id', (req, res) => {
+  const certificateId = req.params.id;
+
+  // 演示数据
+  const certificate = {
+    id: parseInt(certificateId),
+    domain: 'example.com',
+    alt_domains: 'www.example.com,api.example.com,cdn.example.com',
+    status: 'issued',
+    issuer: 'Let\'s Encrypt Authority X3',
+    encryption_type: 'ECC P-256',
+    auto_renew: true,
+    valid_from: '2024-01-01T00:00:00Z',
+    valid_to: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+    days_remaining: 45,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-15T10:30:00Z',
+    note: '这是一个演示证书，用于展示SSL证书管理系统的功能。\n\n包含以下特性：\n- 自动续期功能\n- 多域名支持\n- ECC加密算法\n- 完整的证书链'
+  };
+
+  res.json({
+    success: true,
+    message: '证书详情获取成功',
+    data: {
+      certificate: certificate
+    }
+  });
+});
+
+// 证书续期
+app.post('/api/certificates/:id/renew', (req, res) => {
+  const certificateId = req.params.id;
+
+  res.json({
+    success: true,
+    message: `证书 ${certificateId} 续期请求已提交`,
+    data: {
+      taskId: `renew-${certificateId}-${Date.now()}`
+    }
+  });
+});
+
+// 更新证书配置
+app.put('/api/certificates/:id', (req, res) => {
+  const certificateId = req.params.id;
+  const updates = req.body;
+
+  res.json({
+    success: true,
+    message: '证书配置更新成功',
+    data: {
+      certificateId: certificateId,
+      updates: updates
+    }
+  });
+});
+
+// 下载证书文件
+app.get('/api/certificates/:id/download/:fileType?', (req, res) => {
+  const certificateId = req.params.id;
+  const fileType = req.params.fileType || 'all';
+
+  // 模拟文件下载
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="certificate-${certificateId}-${fileType}.${fileType === 'all' ? 'zip' : 'pem'}"`);
+
+  res.send(`# 演示证书文件 - ${fileType}\n# 证书ID: ${certificateId}\n# 生成时间: ${new Date().toISOString()}\n\n-----BEGIN CERTIFICATE-----\nMIIFakeDataForDemo...\n-----END CERTIFICATE-----`);
 });
 
 // 简单的监控路由

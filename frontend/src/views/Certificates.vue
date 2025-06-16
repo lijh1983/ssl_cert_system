@@ -62,7 +62,9 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'domain'">
-            <a @click="viewCertificate(record)">{{ record.domain }}</a>
+            <router-link :to="`/certificates/${record.id}`" class="domain-link">
+              {{ record.domain }}
+            </router-link>
             <div v-if="record.alt_domains" class="alt-domains">
               <a-tag v-for="domain in record.alt_domains.split(',')" :key="domain" size="small">
                 {{ domain.trim() }}
@@ -84,9 +86,11 @@
           
           <template v-if="column.key === 'actions'">
             <a-space>
-              <a-button type="link" size="small" @click="viewCertificate(record)">
-                查看
-              </a-button>
+              <router-link :to="`/certificates/${record.id}`">
+                <a-button type="link" size="small">
+                  查看详情
+                </a-button>
+              </router-link>
               <a-button type="link" size="small" @click="renewCertificate(record)">
                 续期
               </a-button>
@@ -324,9 +328,7 @@ const refreshData = () => {
   message.success('数据已刷新')
 }
 
-const viewCertificate = (certificate: any) => {
-  message.info(`查看证书: ${certificate.domain}`)
-}
+// viewCertificate 函数已移除，现在使用 router-link 直接跳转
 
 const renewCertificate = async (certificate: any) => {
   try {
@@ -405,6 +407,17 @@ onMounted(() => {
 
 .alt-domains {
   margin-top: 4px;
+}
+
+.domain-link {
+  color: #1890ff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.domain-link:hover {
+  color: #40a9ff;
+  text-decoration: underline;
 }
 
 .form-help {
