@@ -134,6 +134,41 @@
       </a-row>
     </a-card>
 
+    <!-- 实时监控图表 -->
+    <a-row :gutter="[16, 16]" class="charts-section">
+      <a-col :xs="24" :md="12">
+        <RealTimeChart
+          title="CPU使用率"
+          type="cpu"
+          @data-update="handleChartUpdate"
+        />
+      </a-col>
+      <a-col :xs="24" :md="12">
+        <RealTimeChart
+          title="内存使用率"
+          type="memory"
+          @data-update="handleChartUpdate"
+        />
+      </a-col>
+      <a-col :xs="24" :md="12">
+        <RealTimeChart
+          title="磁盘使用率"
+          type="disk"
+          @data-update="handleChartUpdate"
+        />
+      </a-col>
+      <a-col :xs="24" :md="12">
+        <RealTimeChart
+          title="网络流量"
+          type="network"
+          @data-update="handleChartUpdate"
+        />
+      </a-col>
+    </a-row>
+
+    <!-- 系统告警 -->
+    <AlertPanel class="alerts-section" />
+
     <!-- 系统日志 -->
     <a-card title="系统日志" class="logs-section">
       <template #extra>
@@ -190,6 +225,9 @@ import {
   ReloadOutlined
 } from '@ant-design/icons-vue'
 import { ApiService } from '@/services/api'
+import { notify } from '@/utils/notification'
+import RealTimeChart from '@/components/RealTimeChart.vue'
+import AlertPanel from '@/components/AlertPanel.vue'
 
 // 响应式数据
 const expiringLoading = ref(false)
@@ -366,7 +404,16 @@ const refreshServers = () => {
 
 const refreshLogs = () => {
   loadSystemLogs()
-  message.success('系统日志已刷新')
+  notify.success({
+    title: '刷新成功',
+    description: '系统日志已更新'
+  })
+}
+
+// 处理图表数据更新
+const handleChartUpdate = (data: any[]) => {
+  // 可以在这里处理图表数据更新事件
+  console.log('图表数据已更新:', data)
 }
 
 const viewCertificate = (certificate: any) => {
@@ -409,6 +456,14 @@ onMounted(() => {
 }
 
 .servers-section {
+  margin-bottom: 24px;
+}
+
+.charts-section {
+  margin-bottom: 24px;
+}
+
+.alerts-section {
   margin-bottom: 24px;
 }
 

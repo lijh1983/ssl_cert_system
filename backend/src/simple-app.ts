@@ -393,10 +393,111 @@ app.get('/api/monitors/stats', (req, res) => {
     success: true,
     message: '系统统计（演示版本）',
     data: {
-      totalCertificates: 1,
-      expiringSoon: 0,
-      expired: 0,
-      onlineServers: 1
+      totalCertificates: 156,
+      expiringSoon: 7,
+      expired: 2,
+      onlineServers: 24,
+      successRate: 98.5,
+      pendingTasks: 3
+    }
+  });
+});
+
+// 实时监控数据
+app.get('/api/monitors/realtime/:type', (req, res) => {
+  const { type } = req.params;
+  const now = new Date();
+
+  // 生成模拟实时数据
+  const generateData = (baseValue: number, variance: number) => {
+    const data = [];
+    for (let i = 19; i >= 0; i--) {
+      const timestamp = new Date(now.getTime() - i * 5 * 60 * 1000);
+      const value = baseValue + (Math.random() - 0.5) * variance;
+      data.push({
+        timestamp: timestamp.toISOString(),
+        value: Math.max(0, Math.min(100, Math.round(value)))
+      });
+    }
+    return data;
+  };
+
+  let data;
+  switch (type) {
+    case 'cpu':
+      data = generateData(35, 20);
+      break;
+    case 'memory':
+      data = generateData(68, 15);
+      break;
+    case 'disk':
+      data = generateData(42, 10);
+      break;
+    case 'network':
+      data = {
+        inbound: generateData(60, 30),
+        outbound: generateData(40, 25)
+      };
+      break;
+    case 'certificates':
+      data = generateData(98, 5);
+      break;
+    default:
+      data = [];
+  }
+
+  res.json({
+    success: true,
+    message: `${type}监控数据获取成功`,
+    data: {
+      type,
+      data,
+      timestamp: now.toISOString()
+    }
+  });
+});
+
+// 告警数据
+app.get('/api/monitors/alerts', (req, res) => {
+  const now = new Date();
+  const alerts = [
+    {
+      id: '1',
+      title: '证书即将过期',
+      description: '域名 example.com 的SSL证书将在3天后过期',
+      level: 'warning',
+      type: 'certificate_expiring',
+      source: 'certificate_monitor',
+      target: 'example.com',
+      timestamp: new Date(now.getTime() - 10 * 60 * 1000).toISOString(),
+      read: false,
+      resolved: false
+    },
+    {
+      id: '2',
+      title: '服务器离线',
+      description: '服务器 web-server-01 已离线超过5分钟',
+      level: 'critical',
+      type: 'server_offline',
+      source: 'server_monitor',
+      target: 'web-server-01',
+      timestamp: new Date(now.getTime() - 30 * 60 * 1000).toISOString(),
+      read: false,
+      resolved: false
+    }
+  ];
+
+  res.json({
+    success: true,
+    message: '告警数据获取成功',
+    data: {
+      alerts,
+      stats: {
+        critical: alerts.filter(a => a.level === 'critical' && !a.resolved).length,
+        warning: alerts.filter(a => a.level === 'warning' && !a.resolved).length,
+        info: alerts.filter(a => a.level === 'info' && !a.resolved).length,
+        unread: alerts.filter(a => !a.read && !a.resolved).length
+      }
     }
   });
 });

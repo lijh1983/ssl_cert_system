@@ -117,16 +117,23 @@
       </div>
     </a-card>
 
+    <!-- 数据统计 -->
+    <DataStatistics class="statistics-section" />
+
     <!-- 系统状态 -->
     <a-row :gutter="[16, 16]">
       <a-col :xs="24" :md="12">
         <a-card title="证书状态分布" class="chart-card">
           <div class="chart-placeholder">
-            <a-empty description="图表功能开发中" />
+            <RealTimeChart
+              title="证书健康度"
+              type="certificates"
+              :auto-refresh="true"
+            />
           </div>
         </a-card>
       </a-col>
-      
+
       <a-col :xs="24" :md="12">
         <a-card title="服务器状态" class="server-status">
           <a-list
@@ -150,7 +157,7 @@
               </a-list-item>
             </template>
           </a-list>
-          
+
           <div class="table-footer">
             <a-button type="link" @click="$router.push('/servers')">
               查看所有服务器 →
@@ -175,6 +182,9 @@ import {
   ReloadOutlined
 } from '@ant-design/icons-vue'
 import { ApiService } from '@/services/api'
+import { notify } from '@/utils/notification'
+import DataStatistics from '@/components/DataStatistics.vue'
+import RealTimeChart from '@/components/RealTimeChart.vue'
 
 const router = useRouter()
 
@@ -327,6 +337,10 @@ onMounted(() => {
 }
 
 .recent-certificates {
+  margin-bottom: 24px;
+}
+
+.statistics-section {
   margin-bottom: 24px;
 }
 
