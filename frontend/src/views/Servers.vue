@@ -61,7 +61,9 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'hostname'">
-            <a @click="viewServer(record)">{{ record.hostname }}</a>
+            <router-link :to="`/servers/${record.id}`" class="hostname-link">
+              {{ record.hostname }}
+            </router-link>
             <div class="server-info">
               <a-tag size="small">{{ record.ip_address }}</a-tag>
             </div>
@@ -98,9 +100,11 @@
           
           <template v-if="column.key === 'actions'">
             <a-space>
-              <a-button type="link" size="small" @click="viewServer(record)">
-                查看
-              </a-button>
+              <router-link :to="`/servers/${record.id}`">
+                <a-button type="link" size="small">
+                  查看详情
+                </a-button>
+              </router-link>
               <a-button type="link" size="small" @click="editServer(record)">
                 编辑
               </a-button>
@@ -350,9 +354,7 @@ const refreshData = () => {
   message.success('数据已刷新')
 }
 
-const viewServer = (server: any) => {
-  message.info(`查看服务器: ${server.hostname}`)
-}
+// viewServer 函数已移除，现在使用 router-link 直接跳转
 
 const editServer = (server: any) => {
   message.info(`编辑服务器: ${server.hostname}`)
@@ -428,6 +430,17 @@ onMounted(() => {
 
 .server-info {
   margin-top: 4px;
+}
+
+.hostname-link {
+  color: #1890ff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.hostname-link:hover {
+  color: #40a9ff;
+  text-decoration: underline;
 }
 
 .text-muted {

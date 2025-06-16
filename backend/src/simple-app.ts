@@ -97,11 +97,119 @@ app.get('/api/servers', (req, res) => {
           id: 1,
           hostname: 'demo-server.example.com',
           ip_address: '192.168.1.100',
+          os_type: 'Ubuntu',
+          os_version: '20.04 LTS',
+          web_server: 'Nginx',
+          web_server_version: '1.20.1',
           status: 'online',
-          last_heartbeat: new Date()
+          auto_deploy: true,
+          last_heartbeat: new Date(),
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: new Date()
         }
       ],
       total: 1
+    }
+  });
+});
+
+// 获取单个服务器详情
+app.get('/api/servers/:id', (req, res) => {
+  const serverId = req.params.id;
+
+  // 演示数据
+  const server = {
+    id: parseInt(serverId),
+    hostname: 'demo-server.example.com',
+    ip_address: '192.168.1.100',
+    os_type: 'Ubuntu',
+    os_version: '20.04 LTS',
+    web_server: 'Nginx',
+    web_server_version: '1.20.1',
+    status: 'online',
+    auto_deploy: true,
+    last_heartbeat: new Date(Date.now() - 5 * 60 * 1000), // 5分钟前
+    ping_latency: 45,
+    cpu_usage: 35,
+    memory_usage: 68,
+    disk_usage: 42,
+    load_average: '0.85, 0.92, 1.05',
+    uptime: '15天 8小时 32分钟',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: new Date(),
+    note: '这是一个演示服务器，用于展示SSL证书管理系统的功能。\n\n服务器配置：\n- CPU: 4核心\n- 内存: 8GB\n- 磁盘: 100GB SSD\n- 网络: 1Gbps'
+  };
+
+  res.json({
+    success: true,
+    message: '服务器详情获取成功',
+    data: {
+      server: server
+    }
+  });
+});
+
+// 获取服务器部署的证书
+app.get('/api/servers/:id/certificates', (req, res) => {
+  const serverId = req.params.id;
+
+  // 演示数据
+  const certificates = [
+    {
+      id: 1,
+      domain: 'example.com',
+      status: 'deployed',
+      days_remaining: 45,
+      deployed_at: '2024-01-15T10:30:00Z'
+    },
+    {
+      id: 2,
+      domain: 'api.example.com',
+      status: 'deployed',
+      days_remaining: 60,
+      deployed_at: '2024-01-10T14:20:00Z'
+    }
+  ];
+
+  res.json({
+    success: true,
+    message: '服务器证书列表获取成功',
+    data: {
+      certificates: certificates
+    }
+  });
+});
+
+// 测试服务器连接
+app.post('/api/servers/:id/test', (req, res) => {
+  const serverId = req.params.id;
+
+  // 模拟连接测试
+  setTimeout(() => {
+    res.json({
+      success: true,
+      message: '服务器连接测试成功',
+      data: {
+        serverId: serverId,
+        latency: Math.floor(Math.random() * 100) + 20,
+        status: 'online',
+        timestamp: new Date()
+      }
+    });
+  }, 1000);
+});
+
+// 更新服务器配置
+app.put('/api/servers/:id', (req, res) => {
+  const serverId = req.params.id;
+  const updates = req.body;
+
+  res.json({
+    success: true,
+    message: '服务器配置更新成功',
+    data: {
+      serverId: serverId,
+      updates: updates
     }
   });
 });

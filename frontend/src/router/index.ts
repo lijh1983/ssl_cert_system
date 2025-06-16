@@ -35,6 +35,11 @@ const routes = [
         component: () => import('@/views/Servers.vue')
       },
       {
+        path: '/servers/:id',
+        name: 'ServerDetail',
+        component: () => import('@/views/ServerDetail.vue')
+      },
+      {
         path: '/monitors',
         name: 'Monitors',
         component: () => import('@/views/Monitors.vue')
