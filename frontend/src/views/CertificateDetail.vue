@@ -65,11 +65,11 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <a-spin size="large">
-        <template #tip>加载证书详情中...</template>
-      </a-spin>
-    </div>
+    <LoadingSpinner
+      v-if="loading"
+      text="加载证书详情中..."
+      description="正在获取证书的详细信息，请稍候"
+    />
 
     <!-- 证书详情内容 -->
     <div v-else-if="certificate" class="certificate-content">
@@ -248,30 +248,32 @@
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="error-container">
-      <a-result
-        status="error"
-        title="加载失败"
-        :sub-title="error"
-      >
-        <template #extra>
-          <a-button type="primary" @click="loadCertificate">重试</a-button>
-        </template>
-      </a-result>
-    </div>
+    <ActionFeedback
+      v-else-if="error"
+      type="error"
+      title="加载失败"
+      :description="error"
+      :primary-action="{
+        text: '重试',
+        handler: loadCertificate
+      }"
+      :secondary-action="{
+        text: '返回列表',
+        handler: goBack
+      }"
+    />
 
     <!-- 未找到证书 -->
-    <div v-else class="not-found-container">
-      <a-result
-        status="404"
-        title="证书不存在"
-        sub-title="请检查证书ID是否正确"
-      >
-        <template #extra>
-          <a-button type="primary" @click="goBack">返回列表</a-button>
-        </template>
-      </a-result>
-    </div>
+    <ActionFeedback
+      v-else
+      type="404"
+      title="证书不存在"
+      description="请检查证书ID是否正确，或者该证书可能已被删除"
+      :primary-action="{
+        text: '返回列表',
+        handler: goBack
+      }"
+    />
   </div>
 </template>
 
@@ -294,6 +296,9 @@ import {
   LinkOutlined
 } from '@ant-design/icons-vue'
 import { ApiService } from '@/services/api'
+import { notify } from '@/utils/notification'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import ActionFeedback from '@/components/ActionFeedback.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -402,17 +407,20 @@ const goBack = () => {
 
 const refreshData = () => {
   loadCertificate()
-  message.success('数据已刷新')
+  notify.success({
+    title: '数据已刷新',
+    description: '证书详情信息已更新到最新状态'
+  })
 }
 
 const renewCertificate = async () => {
   renewLoading.value = true
   try {
     await ApiService.post(`/certificates/${certificateId.value}/renew`)
-    message.success('证书续期请求已提交')
+    notify.certificateRenewed(certificate.value?.domain || '证书')
     loadCertificate() // 重新加载数据
   } catch (error: any) {
-    message.error('证书续期失败')
+    notify.operationError('续期', `证书 ${certificate.value?.domain}`, error.message)
   } finally {
     renewLoading.value = false
   }

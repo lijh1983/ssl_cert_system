@@ -67,11 +67,11 @@
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <a-spin size="large">
-        <template #tip>加载服务器详情中...</template>
-      </a-spin>
-    </div>
+    <LoadingSpinner
+      v-if="loading"
+      text="加载服务器详情中..."
+      description="正在获取服务器的详细信息和状态，请稍候"
+    />
 
     <!-- 服务器详情内容 -->
     <div v-else-if="server" class="server-content">
@@ -290,30 +290,32 @@
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="error-container">
-      <a-result
-        status="error"
-        title="加载失败"
-        :sub-title="error"
-      >
-        <template #extra>
-          <a-button type="primary" @click="loadServer">重试</a-button>
-        </template>
-      </a-result>
-    </div>
+    <ActionFeedback
+      v-else-if="error"
+      type="error"
+      title="加载失败"
+      :description="error"
+      :primary-action="{
+        text: '重试',
+        handler: loadServer
+      }"
+      :secondary-action="{
+        text: '返回列表',
+        handler: goBack
+      }"
+    />
 
     <!-- 未找到服务器 -->
-    <div v-else class="not-found-container">
-      <a-result
-        status="404"
-        title="服务器不存在"
-        sub-title="请检查服务器ID是否正确"
-      >
-        <template #extra>
-          <a-button type="primary" @click="goBack">返回列表</a-button>
-        </template>
-      </a-result>
-    </div>
+    <ActionFeedback
+      v-else
+      type="404"
+      title="服务器不存在"
+      description="请检查服务器ID是否正确，或者该服务器可能已被删除"
+      :primary-action="{
+        text: '返回列表',
+        handler: goBack
+      }"
+    />
   </div>
 </template>
 
@@ -333,6 +335,9 @@ import {
   PlusOutlined
 } from '@ant-design/icons-vue'
 import { ApiService } from '@/services/api'
+import { notify } from '@/utils/notification'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import ActionFeedback from '@/components/ActionFeedback.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -59,7 +59,18 @@
         :loading="loading"
         @change="handleTableChange"
         row-key="id"
+        :locale="{ emptyText: '' }"
       >
+        <template #emptyText>
+          <EmptyState
+            type="certificates"
+            :action-button="{
+              text: '申请证书',
+              type: 'primary',
+              handler: () => showCreateModal = true
+            }"
+          />
+        </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'domain'">
             <router-link :to="`/certificates/${record.id}`" class="domain-link">
@@ -177,6 +188,8 @@ import {
   SearchOutlined
 } from '@ant-design/icons-vue'
 import { ApiService } from '@/services/api'
+import { notify } from '@/utils/notification'
+import EmptyState from '@/components/EmptyState.vue'
 
 // 响应式数据
 const loading = ref(false)
