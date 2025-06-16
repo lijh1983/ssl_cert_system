@@ -1,15 +1,15 @@
 #!/usr/bin/env ts-node
 
+// 首先加载环境变量
 import dotenv from 'dotenv';
+dotenv.config();
+
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import sequelize from '../config/database';
 import { runMigrations, dropAllTables } from '../config/migration';
 import { User } from '../models/User';
 import { logger } from '../utils/logger';
-
-// 加载环境变量
-dotenv.config();
 
 /**
  * 数据库初始化脚本

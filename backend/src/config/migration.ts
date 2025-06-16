@@ -9,7 +9,14 @@ import { logger } from '@/utils/logger';
 // 创建用户表
 export const createUsersTable = async (queryInterface: QueryInterface) => {
   logger.info('创建用户表...');
-  
+
+  // 检查表是否已存在
+  const tables = await queryInterface.showAllTables();
+  if (tables.includes('users')) {
+    logger.info('用户表已存在，跳过创建');
+    return;
+  }
+
   await queryInterface.createTable('users', {
     id: {
       type: DataTypes.INTEGER,
@@ -72,7 +79,14 @@ export const createUsersTable = async (queryInterface: QueryInterface) => {
 // 创建服务器表
 export const createServersTable = async (queryInterface: QueryInterface) => {
   logger.info('创建服务器表...');
-  
+
+  // 检查表是否已存在
+  const tables = await queryInterface.showAllTables();
+  if (tables.includes('servers')) {
+    logger.info('服务器表已存在，跳过创建');
+    return;
+  }
+
   await queryInterface.createTable('servers', {
     id: {
       type: DataTypes.INTEGER,
@@ -161,7 +175,14 @@ export const createServersTable = async (queryInterface: QueryInterface) => {
 // 创建证书表
 export const createCertificatesTable = async (queryInterface: QueryInterface) => {
   logger.info('创建证书表...');
-  
+
+  // 检查表是否已存在
+  const tables = await queryInterface.showAllTables();
+  if (tables.includes('certificates')) {
+    logger.info('证书表已存在，跳过创建');
+    return;
+  }
+
   await queryInterface.createTable('certificates', {
     id: {
       type: DataTypes.INTEGER,
