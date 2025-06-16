@@ -71,18 +71,80 @@ app.get('/api', (req, res) => {
 
 // 简单的认证路由
 app.post('/api/auth/login', (req, res) => {
+  const { emailOrUsername, password } = req.body;
+
+  // 简单的演示验证
+  if ((emailOrUsername === 'admin' || emailOrUsername === 'admin@example.com') && password === 'admin123') {
+    res.json({
+      success: true,
+      message: '登录成功',
+      data: {
+        token: 'demo-jwt-token-' + Date.now(),
+        refreshToken: 'demo-refresh-token-' + Date.now(),
+        user: {
+          id: 1,
+          username: 'admin',
+          email: 'admin@example.com',
+          is_admin: true,
+          is_active: true,
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: new Date().toISOString(),
+          last_login: new Date().toISOString()
+        }
+      }
+    });
+  } else {
+    res.status(401).json({
+      success: false,
+      message: '用户名或密码错误',
+      error: {
+        code: 'INVALID_CREDENTIALS',
+        message: '用户名或密码错误'
+      }
+    });
+  }
+});
+
+// 获取当前用户信息
+app.get('/api/auth/me', (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: '未提供有效的认证令牌',
+      error: {
+        code: 'MISSING_TOKEN',
+        message: '请提供有效的认证令牌'
+      }
+    });
+  }
+
   res.json({
     success: true,
-    message: '登录接口（演示版本）',
+    message: '获取用户信息成功',
     data: {
-      token: 'demo-jwt-token',
       user: {
         id: 1,
         username: 'admin',
         email: 'admin@example.com',
-        is_admin: true
+        is_admin: true,
+        is_active: true,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
       }
     }
+  });
+  return;
+});
+
+// 登出接口
+app.post('/api/auth/logout', (req, res) => {
+  res.json({
+    success: true,
+    message: '登出成功',
+    data: null
   });
 });
 
@@ -360,6 +422,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
       code: 500
     }
   });
+  return;
 });
 
 // 启动服务器

@@ -63,17 +63,30 @@ router.beforeEach(async (to, from, next) => {
       await authStore.initAuth()
     } catch (error) {
       console.error('初始化认证状态失败:', error)
+      // 清除无效的token
+      authStore.clearAuth()
     }
   }
 
   // 检查是否需要认证
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
+    // 保存目标路由，登录后跳转
+    const redirect = to.fullPath
+    next({
+      path: '/login',
+      query: redirect !== '/' ? { redirect } : {}
+    })
     return
   }
 
   // 检查是否需要游客状态（如登录页面）
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    next('/')
+    return
+  }
+
+  // 检查管理员权限
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
     next('/')
     return
   }

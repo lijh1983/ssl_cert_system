@@ -80,16 +80,32 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const response = await api.post<LoginResponse>('/auth/login', loginData)
-      
+
       if (response.data.success) {
         setAuth(response.data.data)
+
+        // 记住登录状态
+        if (loginData.remember) {
+          localStorage.setItem('rememberLogin', 'true')
+        }
+
         return response.data.data
       } else {
         throw new Error(response.data.message || '登录失败')
       }
     } catch (error: any) {
       clearAuth()
-      throw new Error(error.response?.data?.message || error.message || '登录失败')
+
+      // 处理不同类型的错误
+      if (error.response?.status === 401) {
+        throw new Error('用户名或密码错误')
+      } else if (error.response?.status === 403) {
+        throw new Error('账户已被禁用，请联系管理员')
+      } else if (error.response?.status === 429) {
+        throw new Error('登录尝试过于频繁，请稍后再试')
+      } else {
+        throw new Error(error.response?.data?.message || error.message || '登录失败，请检查网络连接')
+      }
     } finally {
       loading.value = false
     }

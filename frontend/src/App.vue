@@ -100,7 +100,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import {
   DashboardOutlined,
   SafetyCertificateOutlined,
@@ -113,6 +113,7 @@ import {
   GithubOutlined
 } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { notify } from '@/utils/notification'
 
 const router = useRouter()
 const route = useRoute()
@@ -152,15 +153,36 @@ const handleUserMenuClick = async ({ key }: { key: string }) => {
       message.info('系统设置功能开发中')
       break
     case 'logout':
-      try {
-        await authStore.logout()
-        message.success('退出登录成功')
-        router.push('/login')
-      } catch (error) {
-        message.error('退出登录失败')
-      }
+      showLogoutConfirm()
       break
   }
+}
+
+// 显示登出确认
+const showLogoutConfirm = () => {
+  Modal.confirm({
+    title: '确认退出',
+    content: '您确定要退出登录吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await authStore.logout()
+        notify.success({
+          title: '退出成功',
+          description: '您已安全退出系统',
+          duration: 3
+        })
+        router.push('/login')
+      } catch (error) {
+        notify.error({
+          title: '退出失败',
+          description: '退出登录时发生错误，请重试',
+          duration: 5
+        })
+      }
+    }
+  })
 }
 </script>
 

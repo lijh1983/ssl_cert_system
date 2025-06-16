@@ -113,13 +113,15 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { notify } from '@/utils/notification'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 // 登录表单
@@ -187,10 +189,24 @@ const handleLogin = async (values: any) => {
   loading.value = true
   try {
     await authStore.login(values)
-    message.success('登录成功')
-    router.push('/')
+
+    // 显示欢迎消息
+    const welcomeMessage = `欢迎回来，${authStore.user?.username || '用户'}！`
+    notify.success({
+      title: '登录成功',
+      description: welcomeMessage,
+      duration: 3
+    })
+
+    // 跳转到目标页面或首页
+    const redirect = route.query.redirect as string
+    router.push(redirect || '/')
   } catch (error: any) {
-    message.error(error.message || '登录失败')
+    notify.error({
+      title: '登录失败',
+      description: error.message || '登录失败，请重试',
+      duration: 5
+    })
   } finally {
     loading.value = false
   }
@@ -229,6 +245,17 @@ const handleRegister = async () => {
     registerLoading.value = false
   }
 }
+
+// 自动填充记住的登录信息
+onMounted(() => {
+  const rememberedUsername = localStorage.getItem('rememberedUsername')
+  const rememberLogin = localStorage.getItem('rememberLogin')
+
+  if (rememberedUsername && rememberLogin === 'true') {
+    loginForm.emailOrUsername = rememberedUsername
+    loginForm.remember = true
+  }
+})
 </script>
 
 <style scoped>

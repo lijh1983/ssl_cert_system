@@ -62,13 +62,20 @@ api.interceptors.response.use(
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')
-        
+        localStorage.removeItem('rememberLogin')
+
         // 如果不是登录页面，跳转到登录页面
         if (window.location.pathname !== '/login') {
-          window.location.href = '/login'
+          const currentPath = window.location.pathname + window.location.search
+          const redirectQuery = currentPath !== '/' ? `?redirect=${encodeURIComponent(currentPath)}` : ''
+          window.location.href = `/login${redirectQuery}`
         }
-        
-        message.error('登录已过期，请重新登录')
+
+        // 显示会话过期通知
+        message.error({
+          content: '登录会话已过期，请重新登录',
+          duration: 5
+        })
         break
         
       case 403:
