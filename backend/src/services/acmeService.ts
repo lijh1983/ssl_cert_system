@@ -109,13 +109,182 @@ export class AcmeService {
     try {
       const command = `${this.acmePath} --renew -d ${domain} --yes-I-know-dns-manual-mode-enough-go-ahead-please --dry-run`;
       const { stdout } = await execAsync(command);
-      
+
       return stdout.includes('Verify finished');
     } catch (error) {
       logger.error(`域名验证失败: ${error}`);
       return false;
     }
   }
+
+  /**
+   * 续期证书
+   * @param domain 域名
+   */
+  async renewCertificate(domain: string): Promise<boolean> {
+    try {
+      logger.info(`开始续期证书: ${domain}`);
+
+      const command = `${this.acmePath} --renew -d ${domain} --force`;
+      const { stdout, stderr } = await execAsync(command);
+
+      if (stderr && !stderr.includes('Skip')) {
+        logger.error(`证书续期错误: ${stderr}`);
+        return false;
+      }
+
+      logger.info(`证书续期成功: ${domain}`);
+      return true;
+    } catch (error) {
+      logger.error(`证书续期失败: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * 撤销证书
+   * @param domain 域名
+   */
+  async revokeCertificate(domain: string): Promise<boolean> {
+    try {
+      logger.info(`开始撤销证书: ${domain}`);
+
+      const command = `${this.acmePath} --revoke -d ${domain}`;
+      const { stdout, stderr } = await execAsync(command);
+
+      if (stderr) {
+        logger.error(`证书撤销错误: ${stderr}`);
+        return false;
+      }
+
+      logger.info(`证书撤销成功: ${domain}`);
+      return true;
+    } catch (error) {
+      logger.error(`证书撤销失败: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * 检查证书状态
+   * @param domain 域名
+   */
+  async checkCertificateStatus(domain: string): Promise<{
+    exists: boolean;
+    validTo?: Date;
+    daysRemaining?: number;
+    status: string;
+  }> {
+    try {
+      const certPath = path.join(this.certsDir, domain, `${domain}.cer`);
+
+      if (!fs.existsSync(certPath)) {
+        return {
+          exists: false,
+          status: 'not_found'
+        };
+      }
+
+      // 使用openssl检查证书信息
+      const command = `openssl x509 -in ${certPath} -noout -enddate`;
+      const { stdout } = await execAsync(command);
+
+      // 解析过期时间
+      const dateMatch = stdout.match(/notAfter=(.+)/);
+      if (!dateMatch) {
+        return {
+          exists: true,
+          status: 'invalid'
+        };
+      }
+
+      const validTo = new Date(dateMatch[1]);
+      const now = new Date();
+      const daysRemaining = Math.ceil((validTo.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      let status = 'valid';
+      if (daysRemaining <= 0) {
+        status = 'expired';
+      } else if (daysRemaining <= 30) {
+        status = 'expiring_soon';
+      }
+
+      return {
+        exists: true,
+        validTo,
+        daysRemaining,
+        status
+      };
+    } catch (error) {
+      logger.error(`检查证书状态失败: ${error}`);
+      return {
+        exists: false,
+        status: 'error'
+      };
+    }
+  }
+
+  /**
+   * 安装或检查acme.sh
+   */
+  async checkAndInstallAcme(): Promise<boolean> {
+    try {
+      // 检查acme.sh是否存在
+      if (fs.existsSync(this.acmePath)) {
+        const { stdout } = await execAsync(`${this.acmePath} --version`);
+        logger.info(`ACME.sh已安装，版本: ${stdout.trim()}`);
+        return true;
+      }
+
+      // 安装acme.sh
+      logger.info('开始安装acme.sh...');
+      const installCommand = 'curl https://get.acme.sh | sh -s email=admin@ssl-cert-system.com';
+      await execAsync(installCommand);
+
+      logger.info('acme.sh安装完成');
+      return true;
+    } catch (error) {
+      logger.error('acme.sh安装失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取证书文件内容
+   * @param domain 域名
+   * @param fileType 文件类型
+   */
+  async getCertificateFile(domain: string, fileType: 'cert' | 'key' | 'ca' | 'fullchain'): Promise<string> {
+    try {
+      let filePath: string;
+
+      switch (fileType) {
+        case 'cert':
+          filePath = path.join(this.certsDir, domain, `${domain}.cer`);
+          break;
+        case 'key':
+          filePath = path.join(this.certsDir, domain, `${domain}.key`);
+          break;
+        case 'ca':
+          filePath = path.join(this.certsDir, domain, 'ca.cer');
+          break;
+        case 'fullchain':
+          filePath = path.join(this.certsDir, domain, 'fullchain.cer');
+          break;
+        default:
+          throw createError('无效的文件类型', 400);
+      }
+
+      if (!fs.existsSync(filePath)) {
+        throw createError('证书文件不存在', 404);
+      }
+
+      return fs.readFileSync(filePath, 'utf8');
+    } catch (error) {
+      logger.error(`获取证书文件失败: ${error}`);
+      throw error;
+    }
+  }
 }
 
-export default new AcmeService(); 
+export default new AcmeService();

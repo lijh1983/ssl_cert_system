@@ -10,13 +10,14 @@ export interface UserAttributes {
   password: string;
   is_admin: boolean;
   is_active: boolean;
+  api_key?: string;
   last_login?: Date;
   created_at: Date;
   updated_at: Date;
 }
 
 // 创建用户时的可选属性
-export interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'is_admin' | 'is_active' | 'last_login' | 'created_at' | 'updated_at'> {}
+export interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'is_admin' | 'is_active' | 'api_key' | 'last_login' | 'created_at' | 'updated_at'> {}
 
 // 用户模型类
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
@@ -26,6 +27,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public password!: string;
   public is_admin!: boolean;
   public is_active!: boolean;
+  public api_key?: string;
   public last_login?: Date;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
@@ -105,6 +107,11 @@ User.init(
       allowNull: false,
       defaultValue: true,
     },
+    api_key: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: true,
+    },
     last_login: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -138,6 +145,10 @@ User.init(
       },
       {
         fields: ['is_active'],
+      },
+      {
+        unique: true,
+        fields: ['api_key'],
       },
     ],
   }

@@ -161,6 +161,50 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+// API密钥认证中间件
+export const authenticateApiKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const apiKey = req.headers['x-api-key'] as string;
+
+    if (!apiKey) {
+      throw createError('API密钥缺失', 401);
+    }
+
+    // 从数据库查找用户
+    const user = await User.findOne({
+      where: { api_key: apiKey, is_active: true }
+    });
+
+    if (!user) {
+      throw createError('无效的API密钥', 401);
+    }
+
+    // 将用户信息添加到请求对象
+    req.user = user;
+    req.userId = user.id;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 混合认证中间件（支持JWT和API密钥）
+export const authenticateHybrid = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const authHeader = req.headers['authorization'];
+  const apiKey = req.headers['x-api-key'];
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    // 使用JWT认证
+    return authenticate(req, res, next);
+  } else if (apiKey) {
+    // 使用API密钥认证
+    return authenticateApiKey(req, res, next);
+  } else {
+    return next(createError('需要提供访问令牌或API密钥', 401));
+  }
+};
+
 // 检查用户是否为资源所有者或管理员
 export const requireOwnershipOrAdmin = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
@@ -168,7 +212,7 @@ export const requireOwnershipOrAdmin = (req: Request, res: Response, next: NextF
   }
 
   const resourceUserId = parseInt(req.params.userId || req.body.userId || req.query.userId as string);
-  
+
   if (req.user.is_admin || req.user.id === resourceUserId) {
     return next();
   }
@@ -178,6 +222,8 @@ export const requireOwnershipOrAdmin = (req: Request, res: Response, next: NextF
 
 export default {
   authenticate,
+  authenticateApiKey,
+  authenticateHybrid,
   requireAdmin,
   optionalAuth,
   requireOwnershipOrAdmin,
