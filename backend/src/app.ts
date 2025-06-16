@@ -77,6 +77,16 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API健康检查端点
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // API路由
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
