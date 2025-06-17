@@ -28,6 +28,11 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	r.GET("/health", handlers.HealthCheck)
 	r.GET("/api/health", handlers.HealthCheck)
 
+	// 静态文件服务 (前端)
+	r.Static("/static", "./frontend/dist/static")
+	r.StaticFile("/", "./frontend/dist/index.html")
+	r.StaticFile("/favicon.ico", "./frontend/dist/favicon.ico")
+
 	// API路由组
 	api := r.Group("/api")
 	{

@@ -8,7 +8,7 @@ FROM golang:1.21-alpine AS builder
 WORKDIR /app
 
 # 安装必要的工具
-RUN apk add --no-cache git ca-certificates tzdata
+RUN apk add --no-cache git ca-certificates tzdata nodejs npm
 
 # 复制go mod文件
 COPY go.mod go.sum ./
@@ -18,6 +18,13 @@ RUN go mod download
 
 # 复制源代码
 COPY . .
+
+# 构建前端 (如果存在)
+RUN if [ -d "frontend" ]; then \
+        cd frontend && \
+        npm install && \
+        npm run build; \
+    fi
 
 # 构建应用
 ARG VERSION=1.0.0
@@ -43,8 +50,9 @@ RUN addgroup -g 1001 -S sslapp && \
 # 设置工作目录
 WORKDIR /app
 
-# 从构建阶段复制二进制文件
+# 从构建阶段复制二进制文件和前端文件
 COPY --from=builder /app/ssl-cert-system .
+COPY --from=builder /app/frontend/dist ./frontend/dist
 
 # 创建必要的目录
 RUN mkdir -p /app/storage/certs /app/logs && \
