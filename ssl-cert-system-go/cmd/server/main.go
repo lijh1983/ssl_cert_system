@@ -6,6 +6,7 @@ import (
 	"ssl-cert-system/internal/database"
 	"ssl-cert-system/internal/models"
 	"ssl-cert-system/internal/router"
+	"ssl-cert-system/internal/services"
 	"ssl-cert-system/internal/utils/logger"
 )
 
@@ -35,11 +36,22 @@ func main() {
 		logger.Warn("Failed to create some indexes", "error", err)
 	}
 
+	// 初始化定时任务服务
+	schedulerService, err := services.NewSchedulerService()
+	if err != nil {
+		logger.Fatal("Failed to initialize scheduler service", "error", err)
+	}
+
+	// 启动定时任务
+	if err := schedulerService.Start(); err != nil {
+		logger.Fatal("Failed to start scheduler service", "error", err)
+	}
+
 	// 初始化路由
 	r := router.Setup(db, cfg)
 
 	// 启动服务器
-	logger.Info("Starting SSL Certificate Management System", 
+	logger.Info("Starting SSL Certificate Management System",
 		"port", cfg.Server.Port,
 		"env", cfg.Environment)
 
