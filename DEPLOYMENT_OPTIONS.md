@@ -1,5 +1,7 @@
 # SSL证书管理系统 - 部署选项说明
 
+> **🎉 技术栈迁移完成**: 本系统已从Node.js完全迁移到Go语言，现在是纯Go语言的高性能SSL证书管理系统。
+
 ## 📋 部署配置选项
 
 本系统提供了多种部署配置，以适应不同的环境需求：
@@ -21,7 +23,7 @@
 ```bash
 # 1. 克隆项目
 git clone https://github.com/lijh1983/ssl_cert_system.git
-cd ssl_cert_system/ssl-cert-system-go
+cd ssl_cert_system
 
 # 2. 配置环境变量
 cp .env.example .env
@@ -49,11 +51,12 @@ docker-compose up -d
 ```bash
 # 1. 克隆项目
 git clone https://github.com/lijh1983/ssl_cert_system.git
-cd ssl_cert_system/ssl-cert-system-go
+cd ssl_cert_system
 
 # 2. 配置环境变量
 cp .env.example .env
 # 编辑 .env 文件，配置远程数据库
+# 设置 DB_HOST=your_remote_db_host
 
 # 3. 使用远程数据库配置启动
 docker-compose -f docker-compose.remote-db.yml up -d
@@ -76,7 +79,7 @@ docker-compose -f docker-compose.remote-db.yml up -d
 ```bash
 # 1. 克隆项目
 git clone https://github.com/lijh1983/ssl_cert_system.git
-cd ssl_cert_system/ssl-cert-system-go
+cd ssl_cert_system
 
 # 2. 配置环境变量
 cp .env.example .env

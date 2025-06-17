@@ -23,8 +23,8 @@
 ### 方式1: Docker Compose (推荐)
 ```bash
 # 1. 克隆项目
-git clone <repository-url>
-cd ssl-cert-system-go
+git clone https://github.com/lijh1983/ssl_cert_system.git
+cd ssl_cert_system
 
 # 2. 配置环境变量
 cp .env.example .env
@@ -54,13 +54,19 @@ go build -o ssl-cert-system cmd/server/main.go
 ./ssl-cert-system
 ```
 
-### 方式3: Docker构建
+### 方式3: 快速部署 (预构建镜像)
+```bash
+# 适用于网络受限环境
+docker-compose -f docker-compose.fast.yml up -d
+```
+
+### 方式4: Docker构建
 ```bash
 # 构建镜像
-docker build -t ssl-cert-system-go .
+docker build -t ssl-cert-system .
 
 # 运行容器
-docker run -p 3001:3001 ssl-cert-system-go
+docker run -p 3001:3001 ssl-cert-system
 ```
 
 ## 📁 项目结构

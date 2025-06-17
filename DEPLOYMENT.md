@@ -1,4 +1,6 @@
-# SSL证书管理系统 - Go版本部署指南
+# SSL证书管理系统部署指南
+
+> **🎉 技术栈迁移完成**: 本系统已从Node.js完全迁移到Go语言，提供更高的性能和更好的稳定性。
 
 ## 🚀 快速部署
 
@@ -11,8 +13,8 @@ docker --version
 docker-compose --version
 
 # 克隆项目
-git clone <repository-url>
-cd ssl-cert-system-go
+git clone https://github.com/lijh1983/ssl_cert_system.git
+cd ssl_cert_system
 ```
 
 #### 2. 配置环境变量
@@ -26,25 +28,31 @@ nano .env
 
 **重要配置项**:
 ```bash
-# 数据库密码
+# 数据库配置
+DB_HOST=mysql                    # Docker服务名 (本地部署)
+# DB_HOST=8.134.130.92           # 远程数据库地址 (生产环境)
 DB_PASSWORD=your_secure_database_password
 
-# JWT密钥
+# JWT密钥 (生产环境必须修改)
 JWT_SECRET=your_jwt_secret_key_change_in_production
 
-# ACME邮箱 (用于Let's Encrypt)
+# ACME配置 (Let's Encrypt)
 ACME_EMAIL=your_email@domain.com
+ACME_SERVER=https://acme-v02.api.letsencrypt.org/directory  # 生产环境
+# ACME_SERVER=https://acme-staging-v02.api.letsencrypt.org/directory  # 测试环境
 
-# MySQL root密码
+# MySQL配置 (本地部署时需要)
 MYSQL_ROOT_PASSWORD=your_mysql_root_password
 
-# Redis密码
+# Redis密码 (可选)
 REDIS_PASSWORD=your_redis_password
 ```
 
-#### 3. 启动服务
+#### 3. 选择部署方式并启动服务
+
+**方式1: 本地开发环境 (包含MySQL)**
 ```bash
-# 启动所有服务
+# 启动完整环境 (包含MySQL数据库)
 docker-compose up -d
 
 # 查看服务状态
@@ -54,22 +62,52 @@ docker-compose ps
 docker-compose logs -f ssl-cert-system
 ```
 
+**方式2: 生产环境 (使用远程数据库)**
+```bash
+# 配置远程数据库连接
+# 编辑 .env 文件，设置 DB_HOST 为远程数据库地址
+
+# 启动服务 (不包含MySQL)
+docker-compose -f docker-compose.remote-db.yml up -d
+```
+
+**方式3: 快速部署 (使用预构建镜像)**
+```bash
+# 适用于网络受限环境
+docker-compose -f docker-compose.fast.yml up -d
+```
+
 #### 4. 验证部署
 ```bash
-# 检查健康状态
+# 检查前端访问
+curl http://localhost/
+
+# 检查API健康状态
+curl http://localhost/health
+
+# 检查后端直接访问
 curl http://localhost:3001/health
 
-# 检查API
-curl http://localhost:3001/api
+# 检查API接口
+curl http://localhost/api
 ```
 
 ## 🔧 生产环境部署
 
 ### 1. 系统要求
-- **操作系统**: Ubuntu 22.04 LTS (推荐)
-- **内存**: 最少2GB，推荐4GB+
-- **存储**: 最少10GB可用空间
-- **网络**: 需要访问Let's Encrypt服务器
+
+#### 最低要求
+- **操作系统**: Ubuntu 22.04 LTS (推荐) / CentOS 8+ / Debian 11+
+- **CPU**: 1核心 (推荐2核心+)
+- **内存**: 最少1GB，推荐2GB+ (Go版本内存使用更少)
+- **存储**: 最少5GB可用空间，推荐10GB+
+- **网络**: 需要访问Let's Encrypt服务器 (端口80/443)
+
+#### 软件依赖
+- **Docker**: 20.10+
+- **Docker Compose**: 2.0+
+- **Git**: 用于克隆项目
+- **Curl**: 用于健康检查
 
 ### 2. 安全配置
 
@@ -90,21 +128,42 @@ sudo ufw allow 3001
 ```
 
 #### SSL/TLS配置
+
+**内置Nginx配置 (推荐)**
+系统已包含Nginx容器，无需额外配置：
 ```bash
-# 如果使用反向代理，配置Nginx
+# 系统自带完整的Nginx配置
+# 前端: http://localhost
+# API: http://localhost/api
+```
+
+**外部Nginx配置 (可选)**
+如需使用外部Nginx：
+```bash
+# 安装Nginx
 sudo apt install nginx
 
-# 配置Nginx反向代理
+# 配置反向代理
 sudo nano /etc/nginx/sites-available/ssl-cert-system
 ```
 
-**Nginx配置示例**:
+**外部Nginx配置示例**:
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;
 
+    # 前端静态文件
     location / {
+        proxy_pass http://localhost:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # API接口
+    location /api/ {
         proxy_pass http://localhost:3001;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

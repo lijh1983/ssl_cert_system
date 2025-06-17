@@ -1,15 +1,15 @@
-# SSL证书管理系统 Go版本 v1.0.0 发布说明
+# SSL证书管理系统 v1.0.2 发布说明
 
-## 🎉 重大里程碑：Go语言重写版本正式发布
+## 🎉 技术栈迁移完成：Go语言成为主版本
 
-我们很高兴地宣布SSL证书管理系统Go语言版本v1.0.0正式发布！这是一个完全重写的版本，从Node.js迁移到Go语言，带来了显著的性能提升和更好的用户体验。
+我们很高兴地宣布SSL证书管理系统已完成从Node.js到Go语言的完整技术栈迁移！现在Go语言版本成为项目的唯一主版本，带来了显著的性能提升和更好的用户体验。
 
 ## 📅 发布信息
 
-- **版本**: v1.0.0
+- **版本**: v1.0.2
 - **发布日期**: 2025-06-17
-- **Git提交**: 455704a
-- **构建时间**: 2025-06-17T03:59:38Z
+- **技术栈**: 纯Go语言 (Node.js已完全移除)
+- **项目结构**: 单一技术栈，Go语言为主版本
 
 ## 🚀 主要特性
 
@@ -56,29 +56,24 @@
 
 ### 预编译二进制文件
 
-#### Linux (推荐生产环境)
+#### Linux (生产环境)
 ```bash
 # 下载Linux版本
-wget https://github.com/lijh1983/ssl_cert_system/releases/download/v1.0.0/ssl-cert-system-go-linux-1.0.0.tar.gz
+wget https://github.com/lijh1983/ssl_cert_system/releases/download/v1.0.2/ssl-cert-system-go-linux-1.0.2.tar.gz
 
 # 解压并安装
-tar -xzf ssl-cert-system-go-linux-1.0.0.tar.gz
-cd ssl-cert-system-go-linux-1.0.0
+tar -xzf ssl-cert-system-go-linux-1.0.2.tar.gz
+cd ssl-cert-system-go-linux-1.0.2
 sudo ./install.sh
 ```
 
-#### Windows
-```powershell
-# 下载Windows版本
-# 解压 ssl-cert-system-go-windows-1.0.0.zip
-# 运行 start.bat
-```
+> **注意**: Windows支持已移除，专注于Linux服务器部署以提高性能和简化维护。
 
 ### Docker部署 (推荐)
 ```bash
 # 使用Docker Compose
 git clone https://github.com/lijh1983/ssl_cert_system.git
-cd ssl_cert_system/ssl-cert-system-go
+cd ssl_cert_system
 cp .env.example .env
 # 编辑 .env 配置文件
 docker-compose up -d
@@ -87,7 +82,7 @@ docker-compose up -d
 ### 从源码构建
 ```bash
 git clone https://github.com/lijh1983/ssl_cert_system.git
-cd ssl_cert_system/ssl-cert-system-go
+cd ssl_cert_system
 go build -o ssl-cert-system cmd/server/main.go
 ```
 
