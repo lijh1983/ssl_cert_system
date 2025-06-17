@@ -84,13 +84,15 @@ func Load() (*Config, error) {
 		LogLevel: getEnv("LOG_LEVEL", "info"),
 	}
 
-	// 验证必要配置
-	if cfg.Database.Password == "" {
-		return nil, fmt.Errorf("database password is required")
-	}
+	// 验证必要配置（测试模式跳过）
+	if os.Getenv("NODE_ENV") != "test" {
+		if cfg.Database.Password == "" {
+			return nil, fmt.Errorf("database password is required")
+		}
 
-	if cfg.ACME.Email == "" {
-		return nil, fmt.Errorf("ACME email is required")
+		if cfg.ACME.Email == "" {
+			return nil, fmt.Errorf("ACME email is required")
+		}
 	}
 
 	return cfg, nil

@@ -20,8 +20,12 @@ RUN go mod download
 COPY . .
 
 # 构建应用
+ARG VERSION=1.0.0
+ARG BUILD_TIME
+ARG GIT_COMMIT
+
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags='-w -s -extldflags "-static"' \
+    -ldflags="-w -s -extldflags '-static' -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}" \
     -a -installsuffix cgo \
     -o ssl-cert-system \
     cmd/server/main.go

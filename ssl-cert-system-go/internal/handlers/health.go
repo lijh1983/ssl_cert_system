@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"os"
 	"runtime"
 	"ssl-cert-system/internal/database"
 	"ssl-cert-system/internal/utils/response"
@@ -55,13 +56,19 @@ func HealthCheck(c *gin.Context) {
 		dbStatus.Error = "database not initialized"
 	}
 
+	// 获取环境信息
+	env := os.Getenv("NODE_ENV")
+	if env == "" {
+		env = "production"
+	}
+
 	// 构建响应
 	healthResp := HealthResponse{
 		Status:      "OK",
 		Timestamp:   time.Now().Format(time.RFC3339),
 		Uptime:      time.Since(startTime).String(),
-		Environment: "production", // TODO: 从配置获取
-		Version:     "1.0.0",      // TODO: 从构建信息获取
+		Environment: env,
+		Version:     getVersion(),
 		Database:    dbStatus,
 		System: SystemInfo{
 			GoVersion:    runtime.Version(),
@@ -96,4 +103,14 @@ func APIInfo(c *gin.Context) {
 	}
 
 	response.Data(c, http.StatusOK, info)
+}
+
+// getVersion 获取版本信息
+func getVersion() string {
+	// 这里可以从构建时注入的变量获取版本信息
+	// 或者从环境变量获取
+	if version := os.Getenv("APP_VERSION"); version != "" {
+		return version
+	}
+	return "1.0.0"
 }

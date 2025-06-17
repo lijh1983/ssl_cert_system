@@ -93,3 +93,68 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 	return r
 }
+
+// SetupTestMode 设置测试模式路由（不连接数据库）
+func SetupTestMode(cfg *config.Config) *gin.Engine {
+	// 设置Gin模式
+	if cfg.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	r := gin.New()
+
+	// 基础中间件
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
+	r.Use(middleware.CORS())
+	r.Use(middleware.Security())
+
+	// 健康检查（测试模式）
+	r.GET("/health", handlers.HealthCheckTestMode)
+	r.GET("/api/health", handlers.HealthCheckTestMode)
+
+	// API路由组
+	api := r.Group("/api")
+	{
+		// 认证路由（测试模式）
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", handlers.LoginTestMode)
+			auth.POST("/register", handlers.RegisterTestMode)
+		}
+
+		// 需要认证的路由（测试模式）
+		protected := api.Group("")
+		protected.Use(middleware.Auth(cfg.JWT.Secret))
+		{
+			// 用户路由
+			users := protected.Group("/users")
+			{
+				users.GET("", handlers.GetUsersTestMode)
+			}
+
+			// 服务器路由
+			servers := protected.Group("/servers")
+			{
+				servers.GET("", handlers.GetServersTestMode)
+			}
+
+			// 证书路由
+			certificates := protected.Group("/certificates")
+			{
+				certificates.GET("", handlers.GetCertificatesTestMode)
+			}
+
+			// 监控路由
+			monitors := protected.Group("/monitors")
+			{
+				monitors.GET("/dashboard", handlers.GetDashboardTestMode)
+			}
+		}
+	}
+
+	// API根路径
+	api.GET("", handlers.APIInfo)
+
+	return r
+}

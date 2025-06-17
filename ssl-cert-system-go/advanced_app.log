@@ -1,0 +1,29 @@
+{"level":"info","msg":"Running in test mode - skipping database and scheduler initialization","time":"2025-06-17 03:42:30"}
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health                   --> ssl-cert-system/internal/handlers.HealthCheckTestMode (5 handlers)
+[GIN-debug] GET    /api/health               --> ssl-cert-system/internal/handlers.HealthCheckTestMode (5 handlers)
+[GIN-debug] POST   /api/auth/login           --> ssl-cert-system/internal/handlers.LoginTestMode (5 handlers)
+[GIN-debug] POST   /api/auth/register        --> ssl-cert-system/internal/handlers.RegisterTestMode (5 handlers)
+[GIN-debug] GET    /api/users                --> ssl-cert-system/internal/handlers.GetUsersTestMode (6 handlers)
+[GIN-debug] GET    /api/servers              --> ssl-cert-system/internal/handlers.GetServersTestMode (6 handlers)
+[GIN-debug] GET    /api/certificates         --> ssl-cert-system/internal/handlers.GetCertificatesTestMode (6 handlers)
+[GIN-debug] GET    /api/monitors/dashboard   --> ssl-cert-system/internal/handlers.GetDashboardTestMode (6 handlers)
+[GIN-debug] GET    /api                      --> ssl-cert-system/internal/handlers.APIInfo (5 handlers)
+{"env":"test","level":"info","msg":"Starting SSL Certificate Management System (Test Mode)","port":"3003","time":"2025-06-17 03:42:30"}
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :3003
+[GIN] 2025/06/17 - 03:42:33 | 200 |     259.288µs |       127.0.0.1 | POST     "/api/auth/login"
+[GIN] 2025/06/17 - 03:42:33 | 200 |     238.961µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |     145.141µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |      72.026µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |     173.191µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |      44.977µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |      93.395µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |     469.566µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |      69.083µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |      77.949µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
+[GIN] 2025/06/17 - 03:42:33 | 200 |      40.493µs |       127.0.0.1 | GET      "/api/monitors/dashboard"
