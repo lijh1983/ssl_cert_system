@@ -8,7 +8,7 @@ echo "🚀 开始构建SSL证书管理系统Go版本生产包"
 echo "=================================================="
 
 # 设置版本信息
-VERSION="1.0.0"
+VERSION="1.0.2"
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 GO_VERSION=$(go version | awk '{print $3}')
@@ -99,10 +99,31 @@ cp $BUILD_DIR/ssl-cert-system-linux-amd64 $DIST_DIR/$LINUX_PACKAGE/ssl-cert-syst
 
 # 复制配置和文档文件
 cp .env.example $DIST_DIR/$LINUX_PACKAGE/
+cp .env.production $DIST_DIR/$LINUX_PACKAGE/
 cp README.md $DIST_DIR/$LINUX_PACKAGE/
 cp DEPLOYMENT.md $DIST_DIR/$LINUX_PACKAGE/
+cp DEPLOYMENT_OPTIONS.md $DIST_DIR/$LINUX_PACKAGE/
+cp RELEASE_NOTES.md $DIST_DIR/$LINUX_PACKAGE/
 cp docker-compose.yml $DIST_DIR/$LINUX_PACKAGE/
+cp docker-compose.remote-db.yml $DIST_DIR/$LINUX_PACKAGE/
 cp Dockerfile $DIST_DIR/$LINUX_PACKAGE/
+cp nginx.conf $DIST_DIR/$LINUX_PACKAGE/
+
+# 复制Go源码文件 (用于Docker构建)
+cp go.mod $DIST_DIR/$LINUX_PACKAGE/
+cp go.sum $DIST_DIR/$LINUX_PACKAGE/
+
+# 复制前端文件
+if [ -d "frontend/dist" ]; then
+    mkdir -p $DIST_DIR/$LINUX_PACKAGE/frontend
+    cp -r frontend/dist $DIST_DIR/$LINUX_PACKAGE/frontend/
+    cp frontend/package.json $DIST_DIR/$LINUX_PACKAGE/frontend/
+fi
+
+# 复制源代码 (可选，用于重新构建)
+mkdir -p $DIST_DIR/$LINUX_PACKAGE/cmd/server
+cp cmd/server/main.go $DIST_DIR/$LINUX_PACKAGE/cmd/server/
+cp -r internal $DIST_DIR/$LINUX_PACKAGE/
 
 # 复制脚本文件
 mkdir -p $DIST_DIR/$LINUX_PACKAGE/scripts
@@ -217,7 +238,16 @@ mkdir -p $DIST_DIR/$WINDOWS_PACKAGE
 
 cp $BUILD_DIR/ssl-cert-system-windows-amd64.exe $DIST_DIR/$WINDOWS_PACKAGE/ssl-cert-system.exe
 cp .env.example $DIST_DIR/$WINDOWS_PACKAGE/
+cp .env.production $DIST_DIR/$WINDOWS_PACKAGE/
 cp README.md $DIST_DIR/$WINDOWS_PACKAGE/
+cp DEPLOYMENT.md $DIST_DIR/$WINDOWS_PACKAGE/
+cp DEPLOYMENT_OPTIONS.md $DIST_DIR/$WINDOWS_PACKAGE/
+
+# 复制前端文件到Windows包
+if [ -d "frontend/dist" ]; then
+    mkdir -p $DIST_DIR/$WINDOWS_PACKAGE/frontend
+    cp -r frontend/dist $DIST_DIR/$WINDOWS_PACKAGE/frontend/
+fi
 
 # 创建Windows启动脚本
 cat > $DIST_DIR/$WINDOWS_PACKAGE/start.bat << 'EOF'

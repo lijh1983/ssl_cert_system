@@ -1,0 +1,46 @@
+# 构建产物
+build/
+dist/
+ssl-cert-system
+ssl-cert-system-test
+
+# 开发文件
+.git/
+.gitignore
+*.md
+!README.md
+!DEPLOYMENT.md
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+.env.test
+.env.local
+.env.development
+
+# Node.js
+frontend/node_modules/
+frontend/.vite/
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 测试文件
+*_test.go
+test/
+coverage.out
+
+# 文档
+docs/
+*.md
+!README.md
+!DEPLOYMENT.md
