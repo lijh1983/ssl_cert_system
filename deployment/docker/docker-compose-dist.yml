@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # SSL证书管理系统主应用
+  sslapp:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: ssl-cert-system
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=ssl_cert_system
+      - DB_USER=ssl_manager
+      - DB_PASSWORD=your_secure_password_here
+      - JWT_SECRET=your_jwt_secret_key_here_change_in_production
+      - JWT_EXPIRES_IN=24h
+      - CORS_ORIGIN=*
+      - LOG_LEVEL=info
+      - INIT_DB=true
+    volumes:
+      - ssl_data:/app/data
+      - ssl_logs:/app/logs
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ssl_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: ssl-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password_change_me
+      - MYSQL_DATABASE=ssl_cert_system
+      - MYSQL_USER=ssl_manager
+      - MYSQL_PASSWORD=your_secure_password_here
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - ssl_network
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --sql_mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis缓存（可选）
+  redis:
+    image: redis:7-alpine
+    container_name: ssl-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - ssl_network
+    command: redis-server --appendonly yes --requirepass your_redis_password_here
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  ssl_data:
+    driver: local
+  ssl_logs:
+    driver: local
+  ssl_certs:
+    driver: local
+
+networks:
+  ssl_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

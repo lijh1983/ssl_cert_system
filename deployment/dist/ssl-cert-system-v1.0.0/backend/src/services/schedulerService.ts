@@ -123,8 +123,6 @@ export class SchedulerService {
             // 更新状态
             if (status.daysRemaining <= 0) {
               cert.status = 'expired';
-            } else if (status.daysRemaining <= 30) {
-              cert.status = 'expiring_soon';
             } else {
               cert.status = 'issued';
             }
@@ -164,7 +162,7 @@ export class SchedulerService {
             [Op.lte]: 30
           },
           status: {
-            [Op.in]: ['issued', 'expiring_soon']
+            [Op.in]: ['issued']
           }
         }
       });
@@ -227,7 +225,7 @@ export class SchedulerService {
       const certificates = await Certificate.findAll({
         where: {
           status: {
-            [Op.in]: ['issued', 'expiring_soon']
+            [Op.in]: ['issued']
           }
         }
       });

@@ -26,9 +26,9 @@
 1. **下载部署包**
 ```bash
 # 下载并解压部署包
-wget https://github.com/your-repo/ssl-cert-system/releases/latest/download/ssl-cert-system-v1.0.0.tar.gz
+# 将 ssl-cert-system-v1.0.0.tar.gz 上传到服务器
 tar -xzf ssl-cert-system-v1.0.0.tar.gz
-cd ssl-cert-system
+cd ssl-cert-system-v1.0.0
 ```
 
 2. **运行部署脚本**
