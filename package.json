@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@ant-design/icons-vue": "^7.0.1",
-    "ant-design-vue": "^4.0.0-rc.6",
-    "vue-router": "^4.5.1"
-  }
-}
