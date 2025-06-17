@@ -8,8 +8,7 @@ echo "🔍 开始验证发布包完整性"
 echo "=================================================="
 
 PACKAGE_DIR="dist"
-LINUX_PACKAGE="ssl-cert-system-go-linux-1.0.0"
-WINDOWS_PACKAGE="ssl-cert-system-go-windows-1.0.0"
+LINUX_PACKAGE="ssl-cert-system-go-linux-1.0.2"
 
 # 检查发布包是否存在
 if [ ! -d "$PACKAGE_DIR" ]; then
@@ -104,50 +103,13 @@ else
 fi
 
 echo ""
-echo "📦 验证Windows发布包..."
-
-# 检查Windows包
-if [ -f "$PACKAGE_DIR/$WINDOWS_PACKAGE.zip" ]; then
-    cd $PACKAGE_DIR
-    unzip -q $WINDOWS_PACKAGE.zip
-    cd ..
-    
-    WINDOWS_DIR="$PACKAGE_DIR/$WINDOWS_PACKAGE"
-    
-    # 检查Windows必要文件
-    WINDOWS_FILES=(
-        "ssl-cert-system.exe"
-        ".env.example"
-        "README.md"
-        "DEPLOYMENT.md"
-        "start.bat"
-    )
-    
-    echo "   检查Windows文件..."
-    for file in "${WINDOWS_FILES[@]}"; do
-        if [ -f "$WINDOWS_DIR/$file" ]; then
-            echo "   ✅ $file"
-        else
-            echo "   ❌ 缺少文件: $file"
-        fi
-    done
-    
-    # 检查Windows前端文件
-    if [ -d "$WINDOWS_DIR/frontend/dist" ]; then
-        echo "   ✅ Windows前端文件存在"
-    else
-        echo "   ❌ Windows前端文件缺失"
-    fi
-    
-else
-    echo "❌ Windows发布包不存在: $PACKAGE_DIR/$WINDOWS_PACKAGE.zip"
-fi
+echo "ℹ️  Windows支持已移除，专注于Linux服务器部署"
 
 echo ""
 echo "🐳 验证Docker镜像..."
 
 # 检查Docker镜像
-if docker images ssl-cert-system-go:1.0.0 | grep -q "1.0.0"; then
+if docker images ssl-cert-system-go:1.0.2 | grep -q "1.0.2"; then
     echo "   ✅ Docker镜像存在"
     
     # 获取镜像大小
@@ -156,7 +118,7 @@ if docker images ssl-cert-system-go:1.0.0 | grep -q "1.0.0"; then
     
     # 测试容器启动
     echo "   🧪 测试容器启动..."
-    CONTAINER_ID=$(docker run -d --rm -e NODE_ENV=test ssl-cert-system-go:1.0.0)
+    CONTAINER_ID=$(docker run -d --rm -e NODE_ENV=test ssl-cert-system-go:1.0.2)
     sleep 3
     
     if docker ps | grep -q $CONTAINER_ID; then
@@ -213,7 +175,7 @@ echo "4. 确认版本信息正确显示"
 echo "5. 验证部署脚本可以正常执行"
 
 # 清理临时文件
-rm -rf "$PACKAGE_DIR/$LINUX_PACKAGE" "$PACKAGE_DIR/$WINDOWS_PACKAGE" 2>/dev/null || true
+rm -rf "$PACKAGE_DIR/$LINUX_PACKAGE" 2>/dev/null || true
 
 echo ""
 echo "🎉 验证脚本执行完成！"

@@ -45,26 +45,8 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build \
     -o $BUILD_DIR/ssl-cert-system-linux-arm64 \
     cmd/server/main.go
 
-# 构建Windows版本 (开发环境)
-echo "   构建Windows amd64版本..."
-CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build \
-    -ldflags="$LDFLAGS" \
-    -o $BUILD_DIR/ssl-cert-system-windows-amd64.exe \
-    cmd/server/main.go
-
-# 构建macOS版本 (开发环境)
-echo "   构建macOS amd64版本..."
-CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
-    -ldflags="$LDFLAGS" \
-    -o $BUILD_DIR/ssl-cert-system-darwin-amd64 \
-    cmd/server/main.go
-
-# 构建macOS ARM版本 (Apple Silicon)
-echo "   构建macOS arm64版本..."
-CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
-    -ldflags="$LDFLAGS" \
-    -o $BUILD_DIR/ssl-cert-system-darwin-arm64 \
-    cmd/server/main.go
+# 注意: 已移除Windows和macOS支持以节约空间和简化部署
+# 专注于Linux服务器部署
 
 echo "✅ 编译完成"
 echo ""
@@ -232,56 +214,15 @@ cd ..
 
 echo "✅ Linux生产包创建完成: $DIST_DIR/$LINUX_PACKAGE.tar.gz"
 
-# 创建Windows包
-WINDOWS_PACKAGE="ssl-cert-system-go-windows-$VERSION"
-mkdir -p $DIST_DIR/$WINDOWS_PACKAGE
-
-cp $BUILD_DIR/ssl-cert-system-windows-amd64.exe $DIST_DIR/$WINDOWS_PACKAGE/ssl-cert-system.exe
-cp .env.example $DIST_DIR/$WINDOWS_PACKAGE/
-cp .env.production $DIST_DIR/$WINDOWS_PACKAGE/
-cp README.md $DIST_DIR/$WINDOWS_PACKAGE/
-cp DEPLOYMENT.md $DIST_DIR/$WINDOWS_PACKAGE/
-cp DEPLOYMENT_OPTIONS.md $DIST_DIR/$WINDOWS_PACKAGE/
-
-# 复制前端文件到Windows包
-if [ -d "frontend/dist" ]; then
-    mkdir -p $DIST_DIR/$WINDOWS_PACKAGE/frontend
-    cp -r frontend/dist $DIST_DIR/$WINDOWS_PACKAGE/frontend/
-fi
-
-# 创建Windows启动脚本
-cat > $DIST_DIR/$WINDOWS_PACKAGE/start.bat << 'EOF'
-@echo off
-echo Starting SSL Certificate Management System...
-
-if not exist .env (
-    echo Configuration file not found, copying from example...
-    copy .env.example .env
-    echo Please edit .env file to configure database and ACME settings
-    pause
-    exit /b 1
-)
-
-mkdir storage\certs 2>nul
-mkdir logs 2>nul
-
-echo Starting application...
-ssl-cert-system.exe
-pause
-EOF
-
-cd $DIST_DIR
-zip -r $WINDOWS_PACKAGE.zip $WINDOWS_PACKAGE/
-cd ..
-
-echo "✅ Windows包创建完成: $DIST_DIR/$WINDOWS_PACKAGE.zip"
+# 注意: 已移除Windows包构建以节约空间
+echo "ℹ️  Windows支持已移除，专注于Linux服务器部署"
 
 # 创建校验和文件
 echo ""
 echo "🔐 生成校验和..."
 cd $DIST_DIR
-sha256sum *.tar.gz *.zip > checksums.sha256
-md5sum *.tar.gz *.zip > checksums.md5
+sha256sum *.tar.gz > checksums.sha256
+md5sum *.tar.gz > checksums.md5
 cd ..
 
 echo "✅ 校验和文件生成完成"

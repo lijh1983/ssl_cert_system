@@ -1,0 +1,318 @@
+package services
+
+import (
+	"archive/zip"
+	"fmt"
+	"os"
+	"path/filepath"
+	"ssl-cert-system/internal/config"
+	"ssl-cert-system/internal/utils/logger"
+	"strings"
+	"time"
+)
+
+// FileService 文件服务
+type FileService struct {
+	storagePath string
+}
+
+// NewFileService 创建文件服务实例
+func NewFileService() (*FileService, error) {
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	return &FileService{
+		storagePath: cfg.ACME.StoragePath,
+	}, nil
+}
+
+// CertificateFiles 证书文件结构
+type CertificateFiles struct {
+	Domain          string `json:"domain"`
+	CertificatePath string `json:"certificate_path"`
+	PrivateKeyPath  string `json:"private_key_path"`
+	ChainPath       string `json:"chain_path"`
+	CertificateData []byte `json:"certificate_data,omitempty"`
+	PrivateKeyData  []byte `json:"private_key_data,omitempty"`
+	ChainData       []byte `json:"chain_data,omitempty"`
+}
+
+// GetCertificateFiles 获取证书文件
+func (s *FileService) GetCertificateFiles(domain string) (*CertificateFiles, error) {
+	domainDir := filepath.Join(s.storagePath, domain)
+	
+	// 检查目录是否存在
+	if _, err := os.Stat(domainDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("certificate files not found for domain: %s", domain)
+	}
+
+	files := &CertificateFiles{
+		Domain:          domain,
+		CertificatePath: filepath.Join(domainDir, "cert.pem"),
+		PrivateKeyPath:  filepath.Join(domainDir, "key.pem"),
+		ChainPath:       filepath.Join(domainDir, "chain.pem"),
+	}
+
+	// 读取证书文件
+	var err error
+	files.CertificateData, err = os.ReadFile(files.CertificatePath)
+	if err != nil {
+		logger.Error("Failed to read certificate file",
+			"domain", domain,
+			"path", files.CertificatePath,
+			"error", err)
+		return nil, fmt.Errorf("failed to read certificate file: %w", err)
+	}
+
+	// 读取私钥文件
+	files.PrivateKeyData, err = os.ReadFile(files.PrivateKeyPath)
+	if err != nil {
+		logger.Error("Failed to read private key file",
+			"domain", domain,
+			"path", files.PrivateKeyPath,
+			"error", err)
+		return nil, fmt.Errorf("failed to read private key file: %w", err)
+	}
+
+	// 读取证书链文件（可选）
+	files.ChainData, err = os.ReadFile(files.ChainPath)
+	if err != nil {
+		logger.Warn("Failed to read chain file",
+			"domain", domain,
+			"path", files.ChainPath,
+			"error", err)
+		// 证书链文件不是必需的，所以不返回错误
+	}
+
+	logger.Info("Certificate files loaded successfully",
+		"domain", domain,
+		"cert_size", len(files.CertificateData),
+		"key_size", len(files.PrivateKeyData),
+		"chain_size", len(files.ChainData))
+
+	return files, nil
+}
+
+// CreateCertificateZip 创建证书文件的ZIP压缩包
+func (s *FileService) CreateCertificateZip(domain string) (string, error) {
+	files, err := s.GetCertificateFiles(domain)
+	if err != nil {
+		return "", err
+	}
+
+	// 创建临时ZIP文件
+	tempDir := filepath.Join(s.storagePath, "temp")
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	}
+
+	zipPath := filepath.Join(tempDir, fmt.Sprintf("%s-certificates-%d.zip", domain, time.Now().Unix()))
+	zipFile, err := os.Create(zipPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create zip file: %w", err)
+	}
+	defer zipFile.Close()
+
+	// 创建ZIP写入器
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+	// 添加证书文件到ZIP
+	if err := s.addFileToZip(zipWriter, "certificate.pem", files.CertificateData); err != nil {
+		return "", fmt.Errorf("failed to add certificate to zip: %w", err)
+	}
+
+	if err := s.addFileToZip(zipWriter, "private-key.pem", files.PrivateKeyData); err != nil {
+		return "", fmt.Errorf("failed to add private key to zip: %w", err)
+	}
+
+	if len(files.ChainData) > 0 {
+		if err := s.addFileToZip(zipWriter, "chain.pem", files.ChainData); err != nil {
+			return "", fmt.Errorf("failed to add chain to zip: %w", err)
+		}
+	}
+
+	// 添加README文件
+	readme := s.generateReadme(domain)
+	if err := s.addFileToZip(zipWriter, "README.txt", []byte(readme)); err != nil {
+		return "", fmt.Errorf("failed to add readme to zip: %w", err)
+	}
+
+	logger.Info("Certificate ZIP created successfully",
+		"domain", domain,
+		"zip_path", zipPath)
+
+	return zipPath, nil
+}
+
+// addFileToZip 添加文件到ZIP压缩包
+func (s *FileService) addFileToZip(zipWriter *zip.Writer, filename string, data []byte) error {
+	writer, err := zipWriter.Create(filename)
+	if err != nil {
+		return err
+	}
+
+	_, err = writer.Write(data)
+	return err
+}
+
+// generateReadme 生成README文件内容
+func (s *FileService) generateReadme(domain string) string {
+	return fmt.Sprintf(`SSL Certificate Files for %s
+=====================================
+
+This archive contains the SSL certificate files for the domain: %s
+
+Files included:
+- certificate.pem: The SSL certificate
+- private-key.pem: The private key (KEEP THIS SECURE!)
+- chain.pem: The certificate chain (if available)
+
+Installation Instructions:
+1. Upload these files to your web server
+2. Configure your web server to use these certificate files
+3. Ensure the private key file has restricted permissions (600)
+4. Test your SSL configuration
+
+Generated on: %s
+Generated by: SSL Certificate Management System (Go Edition)
+
+IMPORTANT SECURITY NOTES:
+- Keep the private key file secure and never share it
+- Set appropriate file permissions on your server
+- Regularly monitor certificate expiration dates
+- Consider setting up automatic renewal
+
+For support and documentation, please refer to the system documentation.
+`, domain, domain, time.Now().Format("2006-01-02 15:04:05"))
+}
+
+// CleanupTempFiles 清理临时文件
+func (s *FileService) CleanupTempFiles() error {
+	tempDir := filepath.Join(s.storagePath, "temp")
+	
+	// 检查临时目录是否存在
+	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
+		return nil // 目录不存在，无需清理
+	}
+
+	logger.Info("Starting cleanup of temporary files", "temp_dir", tempDir)
+
+	// 遍历临时目录
+	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 跳过目录
+		if info.IsDir() {
+			return nil
+		}
+
+		// 删除超过24小时的文件
+		if time.Since(info.ModTime()) > 24*time.Hour {
+			logger.Info("Removing old temp file", "file", path, "age", time.Since(info.ModTime()))
+			if err := os.Remove(path); err != nil {
+				logger.Error("Failed to remove temp file", "file", path, "error", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logger.Error("Failed to cleanup temp files", "error", err)
+		return fmt.Errorf("failed to cleanup temp files: %w", err)
+	}
+
+	logger.Info("Temporary files cleanup completed")
+	return nil
+}
+
+// CleanupDeletedCertificates 清理已删除证书的文件
+func (s *FileService) CleanupDeletedCertificates(existingDomains []string) error {
+	logger.Info("Starting cleanup of deleted certificate files")
+
+	// 创建存在域名的映射
+	domainMap := make(map[string]bool)
+	for _, domain := range existingDomains {
+		domainMap[domain] = true
+	}
+
+	// 遍历存储目录
+	entries, err := os.ReadDir(s.storagePath)
+	if err != nil {
+		return fmt.Errorf("failed to read storage directory: %w", err)
+	}
+
+	cleanedCount := 0
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		domain := entry.Name()
+		
+		// 跳过特殊目录
+		if domain == "temp" || strings.HasPrefix(domain, ".") {
+			continue
+		}
+
+		// 如果域名不在现有列表中，删除其文件
+		if !domainMap[domain] {
+			domainDir := filepath.Join(s.storagePath, domain)
+			logger.Info("Removing files for deleted certificate", "domain", domain, "path", domainDir)
+			
+			if err := os.RemoveAll(domainDir); err != nil {
+				logger.Error("Failed to remove certificate directory",
+					"domain", domain,
+					"path", domainDir,
+					"error", err)
+			} else {
+				cleanedCount++
+			}
+		}
+	}
+
+	logger.Info("Deleted certificate files cleanup completed", "cleaned_count", cleanedCount)
+	return nil
+}
+
+// GetStorageStats 获取存储统计信息
+func (s *FileService) GetStorageStats() (map[string]interface{}, error) {
+	stats := make(map[string]interface{})
+
+	// 计算总存储大小
+	var totalSize int64
+	var fileCount int
+	var dirCount int
+
+	err := filepath.Walk(s.storagePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			dirCount++
+		} else {
+			fileCount++
+			totalSize += info.Size()
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate storage stats: %w", err)
+	}
+
+	stats["total_size_bytes"] = totalSize
+	stats["total_size_mb"] = float64(totalSize) / (1024 * 1024)
+	stats["file_count"] = fileCount
+	stats["directory_count"] = dirCount
+	stats["storage_path"] = s.storagePath
+
+	return stats, nil
+}

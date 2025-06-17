@@ -1,0 +1,24 @@
+# SSL证书管理系统 - 快速部署版本
+# 使用预构建的基础镜像，避免网络问题和长时间构建
+
+# 使用GitHub Container Registry中的预构建基础镜像
+FROM ghcr.io/lijh1983/ssl-cert-system-base:latest
+
+# 如果基础镜像不可用，可以使用本地构建的镜像
+# FROM ssl-cert-system-go:base
+
+# 设置工作目录
+WORKDIR /app
+
+# 切换到非root用户
+USER sslapp
+
+# 暴露端口
+EXPOSE 3001
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3001/health || exit 1
+
+# 启动应用
+CMD ["./ssl-cert-system"]

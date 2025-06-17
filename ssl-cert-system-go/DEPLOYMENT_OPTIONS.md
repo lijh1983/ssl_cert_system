@@ -10,6 +10,7 @@
 |---------|------|--------|----------|
 | `docker-compose.yml` | 本地开发 | 本地MySQL容器 | 开发、测试 |
 | `docker-compose.remote-db.yml` | 生产部署 | 远程MySQL服务器 | 生产环境 |
+| `docker-compose.fast.yml` | 快速部署 | 远程MySQL服务器 | 网络受限环境 |
 
 ## 🚀 部署方式
 
@@ -68,7 +69,34 @@ docker-compose -f docker-compose.remote-db.yml up -d
 - ✅ 数据库独立管理
 - ✅ 更好的可扩展性
 
-### 方式3: 仅后端服务
+### 方式3: 快速部署 (使用预构建镜像)
+
+适用于：网络受限环境、快速部署
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/lijh1983/ssl_cert_system.git
+cd ssl_cert_system/ssl-cert-system-go
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，配置远程数据库
+
+# 3. 使用预构建镜像快速启动
+docker-compose -f docker-compose.fast.yml up -d
+
+# 4. 访问应用
+# 前端: http://localhost
+# API: http://localhost/api
+```
+
+**特点**：
+- ✅ 使用预构建的GitHub镜像
+- ✅ 避免网络问题和长时间构建
+- ✅ 快速启动，适合网络受限环境
+- ✅ 自动更新，跟随代码仓库
+
+### 方式4: 仅后端服务
 
 适用于：微服务架构、API服务
 
@@ -76,12 +104,12 @@ docker-compose -f docker-compose.remote-db.yml up -d
 # 直接运行Go后端
 ./ssl-cert-system
 
-# 或使用Docker
+# 或使用预构建镜像
 docker run -d \
   -p 3001:3001 \
   -e DB_HOST=your_db_host \
   -e DB_PASSWORD=your_password \
-  ssl-cert-system-go:1.0.0
+  ghcr.io/lijh1983/ssl-cert-system-base:latest
 ```
 
 ## 🔧 环境变量配置
