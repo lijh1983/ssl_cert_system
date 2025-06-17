@@ -178,10 +178,34 @@ func (s *SchedulerService) autoRenewCertificates() {
 func (s *SchedulerService) cleanupExpiredFiles() {
 	logger.Info("Starting cleanup of expired files")
 
-	// TODO: 实现清理过期证书文件的逻辑
-	// 1. 查找已删除的证书记录
-	// 2. 删除对应的证书文件
-	// 3. 清理临时文件
+	// 创建文件服务
+	fileService, err := NewFileService()
+	if err != nil {
+		logger.Error("Failed to create file service", "error", err)
+		return
+	}
+
+	// 清理临时文件
+	if err := fileService.CleanupTempFiles(); err != nil {
+		logger.Error("Failed to cleanup temp files", "error", err)
+	}
+
+	// 获取所有现有证书的域名
+	allCerts, err := s.certRepo.FindAll()
+	if err != nil {
+		logger.Error("Failed to get certificates for cleanup", "error", err)
+		return
+	}
+
+	existingDomains := make([]string, 0, len(allCerts))
+	for _, cert := range allCerts {
+		existingDomains = append(existingDomains, cert.Domain)
+	}
+
+	// 清理已删除证书的文件
+	if err := fileService.CleanupDeletedCertificates(existingDomains); err != nil {
+		logger.Error("Failed to cleanup deleted certificate files", "error", err)
+	}
 
 	logger.Info("Cleanup of expired files completed")
 }

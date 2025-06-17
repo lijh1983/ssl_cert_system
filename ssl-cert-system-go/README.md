@@ -18,31 +18,47 @@
 
 ## 🔧 安装和运行
 
-### 1. 克隆项目
+### 方式1: Docker Compose (推荐)
 ```bash
+# 1. 克隆项目
 git clone <repository-url>
 cd ssl-cert-system-go
-```
 
-### 2. 安装依赖
-```bash
-go mod tidy
-```
-
-### 3. 配置环境变量
-```bash
+# 2. 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件，设置数据库连接和其他配置
+# 编辑 .env 文件，设置必要的配置
+
+# 3. 启动服务
+docker-compose up -d
+
+# 4. 查看日志
+docker-compose logs -f ssl-cert-system
 ```
 
-### 4. 运行应用
+### 方式2: 本地开发
 ```bash
-# 开发模式
+# 1. 安装依赖
+go mod tidy
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，设置数据库连接等
+
+# 3. 运行应用
 go run cmd/server/main.go
 
-# 构建并运行
+# 或构建后运行
 go build -o ssl-cert-system cmd/server/main.go
 ./ssl-cert-system
+```
+
+### 方式3: Docker构建
+```bash
+# 构建镜像
+docker build -t ssl-cert-system-go .
+
+# 运行容器
+docker run -p 3001:3001 ssl-cert-system-go
 ```
 
 ## 📁 项目结构
@@ -96,6 +112,12 @@ ssl-cert-system-go/
 - `GET /api/monitors/dashboard` - 获取仪表板数据
 - `GET /api/monitors/certificates` - 获取证书监控数据
 - `GET /api/monitors/servers` - 获取服务器监控数据
+- `GET /api/monitors/health` - 获取系统健康状态
+- `GET /api/monitors/alerts` - 获取系统告警信息
+
+### 文件管理
+- `GET /api/certificates/:id/download` - 下载证书文件
+- `GET /api/certificates/:id/download?format=zip` - 下载证书ZIP包
 
 ## 🏗️ 开发状态
 
@@ -104,23 +126,23 @@ ssl-cert-system-go/
 - [x] 配置管理系统
 - [x] 数据库连接和模型
 - [x] JWT认证系统
-- [x] 基础API框架
+- [x] 完整API框架
 - [x] 用户管理功能
+- [x] 服务器管理功能
+- [x] 证书管理功能
+- [x] ACME客户端集成
+- [x] 定时任务系统
+- [x] 监控和统计功能
+- [x] 文件管理和下载
 - [x] 健康检查接口
+- [x] Docker容器化部署
 
-### 🚧 开发中
-- [ ] 服务器管理功能
-- [ ] 证书管理功能
-- [ ] ACME客户端集成
-- [ ] 定时任务系统
-- [ ] 监控和统计功能
-
-### 📋 待开发
-- [ ] 文件上传和下载
+### 🚧 可选功能
 - [ ] 邮件通知系统
-- [ ] 日志管理
-- [ ] 性能优化
-- [ ] 单元测试
+- [ ] 高级日志管理
+- [ ] 性能监控面板
+- [ ] 单元测试覆盖
+- [ ] API文档生成
 
 ## 🤝 贡献
 

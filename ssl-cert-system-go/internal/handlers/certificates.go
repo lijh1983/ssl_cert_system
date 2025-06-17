@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"ssl-cert-system/internal/services"
 	"ssl-cert-system/internal/utils/response"
@@ -221,13 +222,41 @@ func DownloadCertificate(c *gin.Context) {
 		return
 	}
 
-	// 返回证书文件路径信息
-	downloadInfo := map[string]string{
-		"certificate_path": certificate.CertificatePath,
-		"private_key_path": certificate.PrivateKeyPath,
-		"chain_path":       certificate.ChainPath,
-		"domain":           certificate.Domain,
+	// 检查是否请求ZIP格式
+	format := c.Query("format")
+	if format == "zip" {
+		// 创建ZIP文件并下载
+		fileService, err := services.NewFileService()
+		if err != nil {
+			response.Error(c, http.StatusInternalServerError, "Failed to initialize file service")
+			return
+		}
+
+		zipPath, err := fileService.CreateCertificateZip(certificate.Domain)
+		if err != nil {
+			response.Error(c, http.StatusInternalServerError, "Failed to create certificate ZIP: "+err.Error())
+			return
+		}
+
+		// 设置下载头
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s-certificates.zip", certificate.Domain))
+		c.Header("Content-Type", "application/zip")
+		c.File(zipPath)
+		return
 	}
 
-	response.Data(c, http.StatusOK, downloadInfo)
+	// 返回证书文件信息（默认行为）
+	fileService, err := services.NewFileService()
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to initialize file service")
+		return
+	}
+
+	files, err := fileService.GetCertificateFiles(certificate.Domain)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to get certificate files: "+err.Error())
+		return
+	}
+
+	response.Data(c, http.StatusOK, files)
 }

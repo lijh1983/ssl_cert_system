@@ -82,6 +82,8 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 				monitors.GET("/dashboard", handlers.GetDashboard)
 				monitors.GET("/certificates", handlers.GetCertificateMonitor)
 				monitors.GET("/servers", handlers.GetServerMonitor)
+				monitors.GET("/health", handlers.GetSystemHealth)
+				monitors.GET("/alerts", handlers.GetAlerts)
 			}
 		}
 	}
