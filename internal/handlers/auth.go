@@ -11,8 +11,8 @@ import (
 
 // LoginRequest 登录请求结构
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	EmailOrUsername string `json:"emailOrUsername" binding:"required"`
+	Password        string `json:"password" binding:"required"`
 }
 
 // RegisterRequest 注册请求结构
@@ -37,7 +37,7 @@ func Login(c *gin.Context) {
 	}
 
 	authService := services.NewAuthService()
-	loginResp, err := authService.Login(req.Username, req.Password)
+	loginResp, err := authService.Login(req.EmailOrUsername, req.Password)
 	if err != nil {
 		response.Error(c, http.StatusUnauthorized, err.Error())
 		return
@@ -84,4 +84,22 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	response.Data(c, http.StatusOK, gin.H{"token": token})
+}
+
+// ForgotPasswordRequest 忘记密码请求结构
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// ForgotPassword 忘记密码
+func ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	// 目前只返回成功消息，实际的邮件发送功能需要配置邮件服务
+	// 为了安全，无论邮箱是否存在都返回成功
+	response.Success(c, http.StatusOK, "If the email exists, a password reset link has been sent", nil)
 }

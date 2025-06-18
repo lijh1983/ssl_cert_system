@@ -42,6 +42,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			auth.POST("/login", handlers.Login)
 			auth.POST("/register", handlers.Register)
 			auth.POST("/refresh", handlers.RefreshToken)
+			auth.POST("/forgot-password", handlers.ForgotPassword)
 		}
 
 		// 需要认证的路由

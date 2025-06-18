@@ -6,12 +6,12 @@ version: '3.8'
 services:
   # SSL证书管理系统 - Go版本 (快速部署)
   ssl-cert-system:
-    # 使用预构建的基础镜像
-    image: ghcr.io/lijh1983/ssl-cert-system-base:latest
-    # 或者使用快速Dockerfile
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.fast
+    # 使用本地构建以包含最新修改
+    build:
+      context: .
+      dockerfile: Dockerfile.fast
+    # 或者使用预构建的基础镜像
+    # image: ghcr.io/lijh1983/ssl_cert_system-base:latest
     container_name: ssl-cert-system-go-fast
     restart: unless-stopped
     environment:
@@ -21,7 +21,7 @@ services:
       - DB_HOST=${DB_HOST:-8.134.130.92}
       - DB_PORT=${DB_PORT:-3306}
       - DB_NAME=${DB_NAME:-ssl_cert_system}
-      - DB_USER=${DB_USER:-ssl_manager}
+      - DB_USER=${DB_USER:-ssl_dev}
       - DB_PASSWORD=${DB_PASSWORD:-ssl_manager_password_123}
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_here_change_in_production}
       - ACME_SERVER=${ACME_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
@@ -52,6 +52,7 @@ services:
       - "${HTTPS_PORT:-443}:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
       - /etc/localtime:/etc/localtime:ro
     depends_on:
       ssl-cert-system:

@@ -34,11 +34,19 @@ type LoginResponse struct {
 }
 
 // Login 用户登录
-func (s *AuthService) Login(username, password string) (*LoginResponse, error) {
-	// 查找用户
-	user, err := s.userRepo.FindByUsername(username)
+func (s *AuthService) Login(emailOrUsername, password string) (*LoginResponse, error) {
+	// 查找用户 - 支持用户名或邮箱登录
+	var user *models.User
+	var err error
+
+	// 先尝试用户名查找
+	user, err = s.userRepo.FindByUsername(emailOrUsername)
 	if err != nil {
-		return nil, errors.New("invalid username or password")
+		// 如果用户名查找失败，尝试邮箱查找
+		user, err = s.userRepo.FindByEmail(emailOrUsername)
+		if err != nil {
+			return nil, errors.New("invalid username or password")
+		}
 	}
 
 	// 检查用户是否激活
