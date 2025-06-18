@@ -1,5 +1,5 @@
-# SSL证书管理系统 - 应用镜像
-# 基于基础镜像构建，包含应用代码和构建过程
+# SSL证书管理系统 - 应用镜像（基于基础镜像）
+# 此Dockerfile基于ssl-cert-system-base基础镜像构建应用
 
 # 第一阶段：前端构建
 FROM node:18-alpine AS frontend-builder
@@ -51,57 +51,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     ./cmd/server/main.go
 
 # 第三阶段：最终运行镜像
-# 使用本地构建的基础镜像，如果不存在则回退到Alpine
-FROM ssl-cert-system-base:latest AS base
-
-# 如果基础镜像不可用，使用Alpine作为备选
-FROM alpine:3.18 AS fallback-base
-
-# 安装运行时依赖包
-RUN apk --no-cache add \
-    ca-certificates \
-    curl \
-    tzdata \
-    dumb-init \
-    && rm -rf /var/cache/apk/*
-
-# 设置时区
-ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# 创建应用用户和组
-RUN addgroup -g 1001 -S appuser && \
-    adduser -u 1001 -S appuser -G appuser
-
-# 创建应用目录结构
-RUN mkdir -p \
-    /app \
-    /app/storage \
-    /app/storage/certs \
-    /app/logs \
-    /app/config \
-    /app/tmp
-
-# 设置工作目录
-WORKDIR /app
-
-# 设置目录权限
-RUN chown -R appuser:appuser /app && \
-    chmod -R 755 /app && \
-    chmod -R 750 /app/storage && \
-    chmod -R 750 /app/logs && \
-    chmod -R 750 /app/config
-
-# 切换到非root用户
-USER appuser
-
-# 设置环境变量
-ENV PATH="/app:$PATH" \
-    APP_ENV=production \
-    GOMAXPROCS=0
-
-# 最终阶段：应用镜像
-FROM fallback-base
+FROM ssl-cert-system-base:latest
 
 # 从构建阶段复制应用文件
 COPY --from=go-builder --chown=appuser:appuser /app/ssl-cert-system /app/

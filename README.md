@@ -78,11 +78,19 @@ sudo ./scripts/install-native.sh
 
 ### 方式5: Docker构建
 ```bash
-# 构建镜像
+# 使用构建脚本（推荐）
+./scripts/build-images.sh
+
+# 手动构建基础镜像
+docker build -f Dockerfile.base -t ssl-cert-system-base:latest .
+
+# 手动构建应用镜像
+docker build -f Dockerfile.app -t ssl-cert-system:latest .
+
+# 构建完整镜像（自包含）
 docker build -t ssl-cert-system .
 
-# 运行容器
-docker run -p 3001:3001 ssl-cert-system
+# 详细构建文档: DOCKER_BUILD.md
 ```
 
 ## 📁 项目结构
@@ -107,7 +115,9 @@ ssl-cert-system-go/
 │   └── backup.sh            # 备份脚本
 ├── nginx.conf           # Nginx配置文件
 ├── docker-compose*.yml  # Docker部署配置
-└── DEPLOYMENT_NATIVE.md # 原生部署文档
+├── Dockerfile*          # Docker镜像构建文件
+├── DEPLOYMENT_NATIVE.md # 原生部署文档
+└── DOCKER_BUILD.md      # Docker构建文档
 ```
 
 ## 🔗 API接口

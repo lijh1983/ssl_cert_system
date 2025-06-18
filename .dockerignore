@@ -1,46 +1,100 @@
+# Git相关
+.git/
+.gitignore
+.gitattributes
+
 # 构建产物
 build/
 dist/
 ssl-cert-system
 ssl-cert-system-test
+# 保留frontend/dist用于Docker构建
+!frontend/dist/
 
-# 开发文件
-.git/
-.gitignore
+# 开发文件和文档
 *.md
 !README.md
 !DEPLOYMENT.md
+!DEPLOYMENT_NATIVE.md
+!DOCKER_BUILD.md
+docs/
 
 # 日志文件
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# 临时文件
-.env.test
-.env.local
-.env.development
+# 环境配置文件
+.env
+.env.*
+!.env.example
 
-# Node.js
+# Node.js相关
 frontend/node_modules/
 frontend/.vite/
+node_modules/
+.npm/
+.yarn/
 
-# IDE文件
+# IDE和编辑器文件
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # 操作系统文件
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # 测试文件
 *_test.go
 test/
+tests/
+__tests__/
 coverage.out
+coverage/
+.nyc_output/
 
-# 文档
-docs/
-*.md
-!README.md
-!DEPLOYMENT.md
+# 临时文件
+tmp/
+temp/
+.tmp/
+*.backup
+*.bak
+*.orig
+
+# 证书和密钥（安全考虑）
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+storage/certs/
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 部署相关
+deployment/
+k8s/
+helm/
+
+# Docker相关
+Dockerfile.dev
+docker-compose.override.yml
+docker-compose.dev.yml
+
+# 其他缓存文件
+.cache/
+.eslintcache
+.parcel-cache/
