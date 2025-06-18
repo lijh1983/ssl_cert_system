@@ -2,15 +2,25 @@
 version: '3.8'
 
 services:
+  # SSL证书管理系统基础镜像
+  ssl-cert-system-base:
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    image: ssl-cert-system-base:latest
+    container_name: ssl-cert-system-base
+
   # SSL证书管理系统 - Go版本
   ssl-cert-system:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.app
       args:
         VERSION: "1.0.2"
         BUILD_TIME: "${BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
         GIT_COMMIT: "${GIT_COMMIT:-$(git rev-parse --short HEAD)}"
+    depends_on:
+      - ssl-cert-system-base
     container_name: ssl-cert-system-go
     restart: unless-stopped
     environment:

@@ -2,9 +2,20 @@
 
 > **🎉 技术栈迁移完成**: 本系统已从Node.js完全迁移到Go语言，提供更高的性能和更好的稳定性。
 
+## 📋 部署选项
+
+本系统提供多种部署方式以适应不同环境需求：
+
+| 部署方式 | 适用场景 | 数据库 | 特点 |
+|---------|---------|--------|------|
+| **Docker Compose** | 开发、测试 | 本地MySQL容器 | 一键启动，包含完整环境 |
+| **Docker + 远程DB** | 生产环境 | 远程MySQL | 数据库独立管理 |
+| **Docker 快速部署** | 网络受限 | 远程MySQL | 使用预构建镜像 |
+| **原生部署** | 传统服务器 | 本地/远程MySQL | 无Docker环境 |
+
 ## 🚀 快速部署
 
-### 使用Docker Compose (推荐)
+### 方式1: Docker Compose (推荐)
 
 #### 1. 环境准备
 ```bash
@@ -44,8 +55,7 @@ ACME_SERVER=https://acme-v02.api.letsencrypt.org/directory  # 生产环境
 # MySQL配置 (本地部署时需要)
 MYSQL_ROOT_PASSWORD=your_mysql_root_password
 
-# 注意: 当前版本未实现Redis功能
-# Redis支持将在后续版本中添加
+# 注意: 当前版本(v1.0.2)未实现Redis功能，系统使用MySQL存储所有数据
 ```
 
 #### 3. 选择部署方式并启动服务
@@ -75,6 +85,23 @@ docker-compose -f docker-compose.remote-db.yml up -d
 ```bash
 # 适用于网络受限环境
 docker-compose -f docker-compose.fast.yml up -d
+```
+
+### 方式2: 原生部署 (传统服务器)
+
+适用于已有Nginx和MySQL环境的服务器：
+
+```bash
+# 1. 环境安装 (Ubuntu/Debian)
+sudo ./scripts/install-native.sh
+
+# 2. 应用部署
+./scripts/deploy-native.sh
+
+# 3. 健康检查
+./scripts/health-check.sh
+
+# 详细文档: DEPLOYMENT_NATIVE.md
 ```
 
 #### 4. 验证部署

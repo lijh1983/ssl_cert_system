@@ -4,14 +4,28 @@
 version: '3.8'
 
 services:
-  # SSL证书管理系统 - Go版本 (快速部署)
-  ssl-cert-system:
-    # 使用本地构建以包含最新修改
+  # SSL证书管理系统基础镜像
+  ssl-cert-system-base:
     build:
       context: .
-      dockerfile: Dockerfile.fast
-    # 或者使用预构建的基础镜像
-    # image: ghcr.io/lijh1983/ssl_cert_system-base:latest
+      dockerfile: Dockerfile.base
+    image: ssl-cert-system-base:latest
+    container_name: ssl-cert-system-base-fast
+
+  # SSL证书管理系统 - Go版本 (快速部署)
+  ssl-cert-system:
+    # 使用基础镜像构建应用
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+      args:
+        VERSION: "1.0.2"
+        BUILD_TIME: "${BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+        GIT_COMMIT: "${GIT_COMMIT:-$(git rev-parse --short HEAD)}"
+    depends_on:
+      - ssl-cert-system-base
+    # 或者使用预构建的镜像
+    # image: ghcr.io/lijh1983/ssl_cert_system:latest
     container_name: ssl-cert-system-go-fast
     restart: unless-stopped
     environment:

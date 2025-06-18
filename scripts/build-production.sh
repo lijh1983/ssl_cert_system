@@ -119,13 +119,16 @@ cp .env.example $DIST_DIR/$LINUX_PACKAGE/
 cp .env.production $DIST_DIR/$LINUX_PACKAGE/
 cp README.md $DIST_DIR/$LINUX_PACKAGE/
 cp DEPLOYMENT.md $DIST_DIR/$LINUX_PACKAGE/
-cp DEPLOYMENT_OPTIONS.md $DIST_DIR/$LINUX_PACKAGE/
+cp DEPLOYMENT_NATIVE.md $DIST_DIR/$LINUX_PACKAGE/
+cp DOCKER_BUILD.md $DIST_DIR/$LINUX_PACKAGE/
+cp QUICK_START.md $DIST_DIR/$LINUX_PACKAGE/
 cp RELEASE_NOTES.md $DIST_DIR/$LINUX_PACKAGE/
 cp docker-compose.yml $DIST_DIR/$LINUX_PACKAGE/
 cp docker-compose.remote-db.yml $DIST_DIR/$LINUX_PACKAGE/
 cp docker-compose.fast.yml $DIST_DIR/$LINUX_PACKAGE/
 cp Dockerfile $DIST_DIR/$LINUX_PACKAGE/
 cp Dockerfile.base $DIST_DIR/$LINUX_PACKAGE/
+cp Dockerfile.app $DIST_DIR/$LINUX_PACKAGE/
 cp Dockerfile.fast $DIST_DIR/$LINUX_PACKAGE/
 cp .dockerignore $DIST_DIR/$LINUX_PACKAGE/
 cp nginx.conf $DIST_DIR/$LINUX_PACKAGE/
@@ -168,7 +171,13 @@ cp -r internal $DIST_DIR/$LINUX_PACKAGE/
 # 复制脚本文件
 mkdir -p $DIST_DIR/$LINUX_PACKAGE/scripts
 cp scripts/build-production.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
-cp scripts/verify-package.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
+cp scripts/build-images.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
+cp scripts/deploy-native.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
+cp scripts/install-native.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
+cp scripts/health-check.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
+cp scripts/backup.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
+cp scripts/verify-package.sh $DIST_DIR/$LINUX_PACKAGE/scripts/ 2>/dev/null || echo "   ⚠️  verify-package.sh不存在"
+cp scripts/README.md $DIST_DIR/$LINUX_PACKAGE/scripts/
 
 # 创建启动脚本
 cat > $DIST_DIR/$LINUX_PACKAGE/start.sh << 'EOF'
