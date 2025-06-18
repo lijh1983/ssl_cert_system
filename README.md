@@ -60,7 +60,23 @@ go build -o ssl-cert-system cmd/server/main.go
 docker-compose -f docker-compose.fast.yml up -d
 ```
 
-### 方式4: Docker构建
+### 方式4: 原生部署 (传统服务器)
+```bash
+# 适用于已有Nginx和MySQL环境的服务器
+
+# 1. 环境安装 (Ubuntu/Debian)
+sudo ./scripts/install-native.sh
+
+# 2. 应用部署
+./scripts/deploy-native.sh
+
+# 3. 健康检查
+./scripts/health-check.sh
+
+# 详细文档: DEPLOYMENT_NATIVE.md
+```
+
+### 方式5: Docker构建
 ```bash
 # 构建镜像
 docker build -t ssl-cert-system .
@@ -83,10 +99,15 @@ ssl-cert-system-go/
 │   ├── repositories/    # 数据访问层
 │   ├── services/        # 业务逻辑层
 │   └── utils/           # 工具函数
-├── pkg/                 # 公共包
-├── api/                 # API文档
-├── scripts/             # 脚本文件
-└── deployments/         # 部署配置
+├── frontend/            # Vue.js前端
+├── scripts/             # 部署和管理脚本
+│   ├── install-native.sh    # 环境安装脚本
+│   ├── deploy-native.sh     # 原生部署脚本
+│   ├── health-check.sh      # 健康检查脚本
+│   └── backup.sh            # 备份脚本
+├── nginx.conf           # Nginx配置文件
+├── docker-compose*.yml  # Docker部署配置
+└── DEPLOYMENT_NATIVE.md # 原生部署文档
 ```
 
 ## 🔗 API接口
