@@ -81,6 +81,17 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 				certificates.GET("/:id/download", handlers.DownloadCertificate)
 			}
 
+			// DNS验证路由
+			dns := protected.Group("/dns")
+			{
+				dns.GET("/challenge-type", handlers.GetChallengeType)
+				dns.GET("/challenges", handlers.GetAllDNSChallenges)
+				dns.GET("/challenges/:domain", handlers.GetDNSChallenge)
+				dns.GET("/instructions/:domain", handlers.GetDNSInstructions)
+				dns.POST("/verify/:domain", handlers.VerifyDNSRecord)
+				dns.GET("/status", handlers.GetDNSChallengeStatus)
+			}
+
 			// 监控路由
 			monitors := protected.Group("/monitors")
 			{

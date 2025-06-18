@@ -46,9 +46,12 @@ type JWTConfig struct {
 
 // ACMEConfig ACME配置
 type ACMEConfig struct {
-	Server      string `json:"server"`
-	Email       string `json:"email"`
-	StoragePath string `json:"storage_path"`
+	Server           string `json:"server"`
+	Email            string `json:"email"`
+	StoragePath      string `json:"storage_path"`
+	ChallengeType    string `json:"challenge_type"`    // http-01 或 dns-01
+	HTTPPort         string `json:"http_port"`         // HTTP-01验证端口
+	DNSPropagationWait int  `json:"dns_propagation_wait"` // DNS传播等待时间(秒)
 }
 
 // Load 加载配置
@@ -77,9 +80,12 @@ func Load() (*Config, error) {
 			ExpiresIn: 24 * time.Hour,
 		},
 		ACME: ACMEConfig{
-			Server:      getEnv("ACME_SERVER", "https://acme-v02.api.letsencrypt.org/directory"),
-			Email:       getEnv("ACME_EMAIL", ""),
-			StoragePath: getEnv("ACME_STORAGE_PATH", "./storage/certs"),
+			Server:             getEnv("ACME_SERVER", "https://acme-v02.api.letsencrypt.org/directory"),
+			Email:              getEnv("ACME_EMAIL", ""),
+			StoragePath:        getEnv("ACME_STORAGE_PATH", "./storage/certs"),
+			ChallengeType:      getEnv("ACME_CHALLENGE_TYPE", "http-01"),
+			HTTPPort:           getEnv("ACME_HTTP_PORT", "80"),
+			DNSPropagationWait: getEnvInt("ACME_DNS_PROPAGATION_WAIT", 300), // 5分钟默认等待
 		},
 		LogLevel: getEnv("LOG_LEVEL", "info"),
 	}
@@ -106,7 +112,7 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-// getEnvInt 获取整型环境变量
+// getEnvInt 获取整数类型的环境变量，如果不存在或无效则返回默认值
 func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {
@@ -115,3 +121,5 @@ func getEnvInt(key string, defaultValue int) int {
 	}
 	return defaultValue
 }
+
+

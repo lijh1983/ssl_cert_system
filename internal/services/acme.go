@@ -19,9 +19,11 @@ import (
 
 // ACMEService ACME服务
 type ACMEService struct {
-	client      *lego.Client
-	config      *config.ACMEConfig
-	storagePath string
+	client         *lego.Client
+	config         *config.ACMEConfig
+	storagePath    string
+	dnsProvider    *ManualDNSProvider
+	challengeType  string
 }
 
 // ACMEUser ACME用户实现
@@ -93,10 +95,40 @@ func NewACMEService() (*ACMEService, error) {
 		return nil, fmt.Errorf("failed to create ACME client: %w", err)
 	}
 
-	// 设置HTTP-01挑战
-	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "80"))
-	if err != nil {
-		return nil, fmt.Errorf("failed to set HTTP-01 provider: %w", err)
+	// 根据配置设置挑战类型
+	var dnsProvider *ManualDNSProvider
+	challengeType := cfg.ACME.ChallengeType
+
+	switch challengeType {
+	case "dns-01":
+		// 设置DNS-01手动验证
+		dnsProvider = NewManualDNSProvider()
+		err = client.Challenge.SetDNS01Provider(dnsProvider)
+		if err != nil {
+			return nil, fmt.Errorf("failed to set DNS-01 provider: %w", err)
+		}
+		logger.Info("DNS-01 challenge provider configured")
+
+	case "http-01":
+		// 设置HTTP-01挑战
+		httpPort := cfg.ACME.HTTPPort
+		if httpPort == "" {
+			httpPort = "80"
+		}
+		err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", httpPort))
+		if err != nil {
+			return nil, fmt.Errorf("failed to set HTTP-01 provider: %w", err)
+		}
+		logger.Info("HTTP-01 challenge provider configured", "port", httpPort)
+
+	default:
+		// 默认使用HTTP-01
+		challengeType = "http-01"
+		err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "80"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to set HTTP-01 provider: %w", err)
+		}
+		logger.Info("HTTP-01 challenge provider configured (default)")
 	}
 
 	// 注册用户
@@ -109,12 +141,15 @@ func NewACMEService() (*ACMEService, error) {
 	logger.Info("ACME service initialized successfully",
 		"server", cfg.ACME.Server,
 		"email", cfg.ACME.Email,
-		"storage", storagePath)
+		"storage", storagePath,
+		"challenge_type", challengeType)
 
 	return &ACMEService{
-		client:      client,
-		config:      &cfg.ACME,
-		storagePath: storagePath,
+		client:        client,
+		config:        &cfg.ACME,
+		storagePath:   storagePath,
+		dnsProvider:   dnsProvider,
+		challengeType: challengeType,
 	}, nil
 }
 
@@ -248,4 +283,61 @@ func (s *ACMEService) saveCertificateFiles(domain string, certificates *certific
 		PrivateKeyPath:  keyPath,
 		ChainPath:       chainPath,
 	}, nil
+}
+
+// GetChallengeType 获取当前挑战类型
+func (s *ACMEService) GetChallengeType() string {
+	return s.challengeType
+}
+
+// GetDNSChallenge 获取DNS挑战信息 (仅DNS-01验证)
+func (s *ACMEService) GetDNSChallenge(domain string) (*DNSChallenge, error) {
+	if s.challengeType != "dns-01" {
+		return nil, fmt.Errorf("DNS challenges are only available for dns-01 challenge type")
+	}
+
+	if s.dnsProvider == nil {
+		return nil, fmt.Errorf("DNS provider not initialized")
+	}
+
+	return s.dnsProvider.GetChallenge(domain)
+}
+
+// GetAllDNSChallenges 获取所有DNS挑战信息 (仅DNS-01验证)
+func (s *ACMEService) GetAllDNSChallenges() (map[string]*DNSChallenge, error) {
+	if s.challengeType != "dns-01" {
+		return nil, fmt.Errorf("DNS challenges are only available for dns-01 challenge type")
+	}
+
+	if s.dnsProvider == nil {
+		return nil, fmt.Errorf("DNS provider not initialized")
+	}
+
+	return s.dnsProvider.GetAllChallenges(), nil
+}
+
+// GetDNSInstructions 获取DNS配置说明 (仅DNS-01验证)
+func (s *ACMEService) GetDNSInstructions(domain string) (string, error) {
+	if s.challengeType != "dns-01" {
+		return "", fmt.Errorf("DNS instructions are only available for dns-01 challenge type")
+	}
+
+	if s.dnsProvider == nil {
+		return "", fmt.Errorf("DNS provider not initialized")
+	}
+
+	return s.dnsProvider.GetDNSInstructions(domain)
+}
+
+// VerifyDNSRecord 验证DNS记录 (仅DNS-01验证)
+func (s *ACMEService) VerifyDNSRecord(domain string) (bool, error) {
+	if s.challengeType != "dns-01" {
+		return false, fmt.Errorf("DNS verification is only available for dns-01 challenge type")
+	}
+
+	if s.dnsProvider == nil {
+		return false, fmt.Errorf("DNS provider not initialized")
+	}
+
+	return s.dnsProvider.VerifyDNSRecord(domain)
 }

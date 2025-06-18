@@ -321,3 +321,28 @@ func (s *CertificateService) CheckExpiringCertificates() error {
 
 	return nil
 }
+
+// GetChallengeType 获取当前挑战类型
+func (s *CertificateService) GetChallengeType() string {
+	return s.acmeService.GetChallengeType()
+}
+
+// GetDNSChallenge 获取DNS挑战信息
+func (s *CertificateService) GetDNSChallenge(domain string) (*DNSChallenge, error) {
+	return s.acmeService.GetDNSChallenge(domain)
+}
+
+// GetAllDNSChallenges 获取所有DNS挑战信息
+func (s *CertificateService) GetAllDNSChallenges() (map[string]*DNSChallenge, error) {
+	return s.acmeService.GetAllDNSChallenges()
+}
+
+// GetDNSInstructions 获取DNS配置说明
+func (s *CertificateService) GetDNSInstructions(domain string) (string, error) {
+	return s.acmeService.GetDNSInstructions(domain)
+}
+
+// VerifyDNSRecord 验证DNS记录
+func (s *CertificateService) VerifyDNSRecord(domain string) (bool, error) {
+	return s.acmeService.VerifyDNSRecord(domain)
+}
