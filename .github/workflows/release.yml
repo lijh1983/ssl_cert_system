@@ -107,9 +107,7 @@ jobs:
         chmod +x scripts/build-production.sh
         
         # 跳过Docker构建，因为我们会在后面单独构建
-        sed -i '/^echo "🐳 构建Docker镜像..."/,/^echo "✅ Docker镜像构建完成"/c\
-echo "🐳 跳过Docker镜像构建（将在后续步骤中构建）..."' scripts/build-production.sh
-        
+        sed -i 's/^echo "🐳 构建Docker镜像..."/echo "🐳 跳过Docker镜像构建（将在后续步骤中构建）..."/' scripts/build-production.sh
         ./scripts/build-production.sh
         echo "✅ 生产构建完成"
 
