@@ -36,7 +36,11 @@ if [ -f "$PACKAGE_DIR/$LINUX_PACKAGE.tar.gz" ]; then
         "DEPLOYMENT_OPTIONS.md"
         "docker-compose.yml"
         "docker-compose.remote-db.yml"
+        "docker-compose.fast.yml"
         "Dockerfile"
+        "Dockerfile.base"
+        "Dockerfile.fast"
+        ".dockerignore"
         "nginx.conf"
         "go.mod"
         "go.sum"
@@ -113,7 +117,7 @@ if docker images ssl-cert-system-go:1.0.2 | grep -q "1.0.2"; then
     echo "   ✅ Docker镜像存在"
     
     # 获取镜像大小
-    IMAGE_SIZE=$(docker images ssl-cert-system-go:1.0.0 --format "table {{.Size}}" | tail -n 1)
+    IMAGE_SIZE=$(docker images ssl-cert-system-go:1.0.2 --format "table {{.Size}}" | tail -n 1)
     echo "   📊 镜像大小: $IMAGE_SIZE"
     
     # 测试容器启动

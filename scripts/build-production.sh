@@ -26,7 +26,33 @@ DIST_DIR="dist"
 rm -rf $BUILD_DIR $DIST_DIR
 mkdir -p $BUILD_DIR $DIST_DIR
 
-echo "🔧 开始编译..."
+echo "🔧 开始构建前端..."
+
+# 构建前端 (如果存在)
+if [ -d "frontend" ]; then
+    echo "   检测到前端项目，开始构建..."
+    cd frontend
+
+    # 检查是否有package.json
+    if [ -f "package.json" ]; then
+        echo "   安装前端依赖..."
+        npm install
+
+        echo "   构建前端项目..."
+        npm run build
+
+        echo "   ✅ 前端构建完成"
+    else
+        echo "   ⚠️  前端目录存在但没有package.json文件"
+    fi
+
+    cd ..
+else
+    echo "   ℹ️  未检测到前端项目，跳过前端构建"
+fi
+
+echo ""
+echo "🔧 开始编译Go应用..."
 
 # 设置构建标志
 LDFLAGS="-w -s -X main.Version=$VERSION -X main.BuildTime=$BUILD_TIME -X main.GitCommit=$GIT_COMMIT"
@@ -59,8 +85,17 @@ echo ""
 echo "🐳 构建Docker镜像..."
 
 # 构建生产Docker镜像
-docker build -t ssl-cert-system-go:$VERSION .
-docker build -t ssl-cert-system-go:latest .
+docker build \
+    --build-arg VERSION=$VERSION \
+    --build-arg BUILD_TIME="$BUILD_TIME" \
+    --build-arg GIT_COMMIT=$GIT_COMMIT \
+    -t ssl-cert-system-go:$VERSION .
+
+docker build \
+    --build-arg VERSION=$VERSION \
+    --build-arg BUILD_TIME="$BUILD_TIME" \
+    --build-arg GIT_COMMIT=$GIT_COMMIT \
+    -t ssl-cert-system-go:latest .
 
 echo "✅ Docker镜像构建完成"
 
@@ -88,7 +123,11 @@ cp DEPLOYMENT_OPTIONS.md $DIST_DIR/$LINUX_PACKAGE/
 cp RELEASE_NOTES.md $DIST_DIR/$LINUX_PACKAGE/
 cp docker-compose.yml $DIST_DIR/$LINUX_PACKAGE/
 cp docker-compose.remote-db.yml $DIST_DIR/$LINUX_PACKAGE/
+cp docker-compose.fast.yml $DIST_DIR/$LINUX_PACKAGE/
 cp Dockerfile $DIST_DIR/$LINUX_PACKAGE/
+cp Dockerfile.base $DIST_DIR/$LINUX_PACKAGE/
+cp Dockerfile.fast $DIST_DIR/$LINUX_PACKAGE/
+cp .dockerignore $DIST_DIR/$LINUX_PACKAGE/
 cp nginx.conf $DIST_DIR/$LINUX_PACKAGE/
 
 # 复制Go源码文件 (用于Docker构建)
@@ -96,10 +135,29 @@ cp go.mod $DIST_DIR/$LINUX_PACKAGE/
 cp go.sum $DIST_DIR/$LINUX_PACKAGE/
 
 # 复制前端文件
-if [ -d "frontend/dist" ]; then
+if [ -d "frontend" ]; then
     mkdir -p $DIST_DIR/$LINUX_PACKAGE/frontend
-    cp -r frontend/dist $DIST_DIR/$LINUX_PACKAGE/frontend/
-    cp frontend/package.json $DIST_DIR/$LINUX_PACKAGE/frontend/
+
+    # 复制构建后的前端文件
+    if [ -d "frontend/dist" ]; then
+        cp -r frontend/dist $DIST_DIR/$LINUX_PACKAGE/frontend/
+        echo "   ✅ 前端构建文件已复制"
+    else
+        echo "   ⚠️  前端构建文件不存在，请先运行前端构建"
+    fi
+
+    # 复制前端配置文件 (用于重新构建)
+    cp frontend/package.json $DIST_DIR/$LINUX_PACKAGE/frontend/ 2>/dev/null || echo "   ⚠️  package.json不存在"
+    cp frontend/vite.config.ts $DIST_DIR/$LINUX_PACKAGE/frontend/ 2>/dev/null || echo "   ⚠️  vite.config.ts不存在"
+    cp frontend/tsconfig.json $DIST_DIR/$LINUX_PACKAGE/frontend/ 2>/dev/null || echo "   ⚠️  tsconfig.json不存在"
+    cp frontend/tsconfig.node.json $DIST_DIR/$LINUX_PACKAGE/frontend/ 2>/dev/null || echo "   ⚠️  tsconfig.node.json不存在"
+    cp frontend/index.html $DIST_DIR/$LINUX_PACKAGE/frontend/ 2>/dev/null || echo "   ⚠️  index.html不存在"
+
+    # 复制前端源代码 (可选，用于重新构建)
+    if [ -d "frontend/src" ]; then
+        cp -r frontend/src $DIST_DIR/$LINUX_PACKAGE/frontend/
+        echo "   ✅ 前端源代码已复制"
+    fi
 fi
 
 # 复制源代码 (可选，用于重新构建)
@@ -110,6 +168,7 @@ cp -r internal $DIST_DIR/$LINUX_PACKAGE/
 # 复制脚本文件
 mkdir -p $DIST_DIR/$LINUX_PACKAGE/scripts
 cp scripts/build-production.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
+cp scripts/verify-package.sh $DIST_DIR/$LINUX_PACKAGE/scripts/
 
 # 创建启动脚本
 cat > $DIST_DIR/$LINUX_PACKAGE/start.sh << 'EOF'

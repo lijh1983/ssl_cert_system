@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VERSION: "1.0.0"
+        VERSION: "1.0.2"
         BUILD_TIME: "${BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
         GIT_COMMIT: "${GIT_COMMIT:-$(git rev-parse --short HEAD)}"
     container_name: ssl-cert-system-go
@@ -27,7 +27,7 @@ services:
       - ACME_EMAIL=${ACME_EMAIL:-your_email@domain.com}
       - ACME_STORAGE_PATH=/app/storage/certs
       - LOG_LEVEL=${LOG_LEVEL:-info}
-      - APP_VERSION=1.0.0
+      - APP_VERSION=1.0.2
     volumes:
       - ssl_certs:/app/storage/certs
       - ssl_logs:/app/logs

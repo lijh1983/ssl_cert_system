@@ -1,1 +1,37 @@
-node_modules
+# 依赖目录
+node_modules/
+frontend/node_modules/
+
+# 构建产物
+build/
+dist/
+ssl-cert-system
+ssl-cert-system-test
+
+# 日志文件
+*.log
+logs/
+advanced_app.log
+
+# 环境配置文件
+.env
+.env.local
+.env.development
+.env.test
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率
+coverage.out
+
+# 临时文件
+*.tmp
+*.temp
