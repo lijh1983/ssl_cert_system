@@ -182,13 +182,4 @@ jobs:
           echo "ℹ️  Dockerfile.fast无需更新"
         else
           echo "📝 Dockerfile.fast已更新"
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add Dockerfile.fast
-          git commit -m "🤖 自动更新Dockerfile.fast基础镜像引用
-
-- 更新基础镜像到最新版本
-- 镜像: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-- 提交: ${{ github.sha }}"
-          git push
         fi
