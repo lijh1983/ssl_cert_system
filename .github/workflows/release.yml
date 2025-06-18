@@ -1,0 +1,204 @@
+name: Build and Release
+
+on:
+  # 创建标签时触发
+  push:
+    tags:
+      - 'v*'
+  
+  # 手动触发发布
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本号 (例如: v1.0.2)'
+        required: true
+        type: string
+      create_release:
+        description: '是否创建GitHub Release'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  BASE_IMAGE_NAME: ${{ github.repository }}-base
+  APP_IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 设置Go环境
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: 设置Node.js环境
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: 设置Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 登录到Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 提取版本信息
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION="${{ inputs.version }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/}
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+        echo "🏷️  版本: $VERSION"
+
+    - name: 构建前端
+      run: |
+        echo "🔧 构建前端..."
+        cd frontend
+        npm ci
+        npm run build
+        echo "✅ 前端构建完成"
+
+    - name: 构建Go应用
+      run: |
+        echo "🔧 构建Go应用..."
+        
+        VERSION="${{ steps.version.outputs.version_number }}"
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        GIT_COMMIT=${{ github.sha }}
+        
+        # 构建Linux amd64版本
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+          -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}" \
+          -o build/ssl-cert-system-linux-amd64 \
+          cmd/server/main.go
+        
+        # 构建Linux arm64版本
+        CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build \
+          -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}" \
+          -o build/ssl-cert-system-linux-arm64 \
+          cmd/server/main.go
+        
+        echo "✅ Go应用构建完成"
+
+    - name: 运行生产构建脚本
+      run: |
+        echo "📦 运行生产构建脚本..."
+        chmod +x scripts/build-production.sh
+        
+        # 跳过Docker构建，因为我们会在后面单独构建
+        sed -i '/^echo "🐳 构建Docker镜像..."/,/^echo "✅ Docker镜像构建完成"/c\
+echo "🐳 跳过Docker镜像构建（将在后续步骤中构建）..."' scripts/build-production.sh
+        
+        ./scripts/build-production.sh
+        echo "✅ 生产构建完成"
+
+    - name: 构建并推送基础镜像
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.base
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:latest
+        build-args: |
+          VERSION=${{ steps.version.outputs.version_number }}
+          BUILD_TIME=${{ github.event.head_commit.timestamp }}
+          GIT_COMMIT=${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 构建并推送应用镜像
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.APP_IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          ${{ env.REGISTRY }}/${{ env.APP_IMAGE_NAME }}:latest
+        build-args: |
+          VERSION=${{ steps.version.outputs.version_number }}
+          BUILD_TIME=${{ github.event.head_commit.timestamp }}
+          GIT_COMMIT=${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 创建GitHub Release
+      if: github.event_name != 'workflow_dispatch' || inputs.create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: SSL证书管理系统 ${{ steps.version.outputs.version }}
+        body: |
+          ## 🎉 SSL证书管理系统 ${{ steps.version.outputs.version }} 发布
+          
+          ### 📦 发布内容
+          - ✅ Go后端应用 (Linux amd64/arm64)
+          - ✅ Vue.js前端应用
+          - ✅ Docker镜像 (多架构支持)
+          - ✅ 完整发布包
+          
+          ### 🐳 Docker镜像
+          ```bash
+          # 基础镜像
+          docker pull ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          
+          # 应用镜像
+          docker pull ${{ env.REGISTRY }}/${{ env.APP_IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          ```
+          
+          ### 📋 部署方式
+          1. **Docker部署**: 使用上述镜像
+          2. **二进制部署**: 下载发布包中的二进制文件
+          3. **源码构建**: 克隆仓库并运行构建脚本
+          
+          ### 🔗 相关链接
+          - [部署文档](https://github.com/${{ github.repository }}/blob/main/DEPLOYMENT.md)
+          - [快速开始](https://github.com/${{ github.repository }}/blob/main/QUICK_START.md)
+          
+          ---
+          **构建信息**
+          - 构建时间: ${{ github.event.head_commit.timestamp }}
+          - Git提交: ${{ github.sha }}
+          - 工作流: ${{ github.run_id }}
+        files: |
+          dist/*.tar.gz
+          dist/checksums.*
+        draft: false
+        prerelease: false
+
+    - name: 输出发布信息
+      run: |
+        echo "🎉 发布完成！"
+        echo "📋 发布信息:"
+        echo "  - 版本: ${{ steps.version.outputs.version }}"
+        echo "  - 基础镜像: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ steps.version.outputs.version }}"
+        echo "  - 应用镜像: ${{ env.REGISTRY }}/${{ env.APP_IMAGE_NAME }}:${{ steps.version.outputs.version }}"
+        echo "  - 发布包: dist/ssl-cert-system-go-linux-${{ steps.version.outputs.version_number }}.tar.gz"
+        echo ""
+        echo "🚀 使用方式:"
+        echo "  docker run -d -p 3001:3001 ${{ env.REGISTRY }}/${{ env.APP_IMAGE_NAME }}:${{ steps.version.outputs.version }}"
