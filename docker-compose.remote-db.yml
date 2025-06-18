@@ -65,28 +65,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Redis缓存（可选）
-  redis:
-    image: redis:7-alpine
-    container_name: ssl-redis-go
-    restart: unless-stopped
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-your_redis_password_here}
-    volumes:
-      - redis_data:/data
-      - /etc/localtime:/etc/localtime:ro
-    networks:
-      - ssl_network
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-your_redis_password_here}
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+# Redis支持已移除 - 当前版本未实现Redis功能
 
 volumes:
-  redis_data:
-    driver: local
   ssl_certs:
     driver: local
   ssl_logs:

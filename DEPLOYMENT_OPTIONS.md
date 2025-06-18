@@ -181,7 +181,7 @@ MySQL Database
 - **Nginx**: 前端静态文件服务 + API反向代理
 - **Go Backend**: SSL证书管理核心服务
 - **MySQL**: 数据存储
-- **Redis**: 缓存服务 (可选)
+- **文件存储**: 证书文件本地存储
 
 ## 🔐 安全配置
 
@@ -189,7 +189,6 @@ MySQL Database
 1. **JWT_SECRET**: 使用强密码
 2. **DB_PASSWORD**: 使用强数据库密码
 3. **ACME_EMAIL**: 使用真实邮箱地址
-4. **REDIS_PASSWORD**: Redis访问密码
 
 ### 网络安全
 - 使用HTTPS (配置SSL证书)
@@ -239,7 +238,7 @@ docker-compose logs ssl-cert-system | grep -i acme
 ### 扩展性
 - 使用负载均衡器
 - 数据库读写分离
-- Redis集群
+- 缓存系统集成 (可添加Redis)
 - 容器编排 (Kubernetes)
 
 ## 📞 技术支持

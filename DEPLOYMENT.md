@@ -44,8 +44,8 @@ ACME_SERVER=https://acme-v02.api.letsencrypt.org/directory  # 生产环境
 # MySQL配置 (本地部署时需要)
 MYSQL_ROOT_PASSWORD=your_mysql_root_password
 
-# Redis密码 (可选)
-REDIS_PASSWORD=your_redis_password
+# 注意: 当前版本未实现Redis功能
+# Redis支持将在后续版本中添加
 ```
 
 #### 3. 选择部署方式并启动服务
