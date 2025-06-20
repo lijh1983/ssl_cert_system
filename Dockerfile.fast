@@ -4,8 +4,15 @@
 # 第一阶段：构建Go应用
 FROM golang:1.21-alpine AS builder
 
+# 配置Go代理（解决网络问题）
+ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct
+ENV GOSUMDB=sum.golang.google.cn
+ENV GO111MODULE=on
+
 # 安装必要的包
-RUN apk add --no-cache git curl
+# git 在此文件中可能仍被用于某些目的（例如，如果直接从git仓库构建），但如果只是构建本地代码则不需要。
+# curl 仍然保留，因为它可能用于其他目的或健康检查（尽管健康检查通常在最终镜像中）。
+RUN apk add --no-cache git curl # 根据实际需求，可以考虑移除 git
 
 # 设置工作目录
 WORKDIR /app

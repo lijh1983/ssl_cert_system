@@ -10,7 +10,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 
 # 安装前端依赖
-RUN npm ci --only=production
+RUN npm ci
 
 # 复制前端源代码
 COPY frontend/ ./
@@ -21,8 +21,14 @@ RUN npm run build
 # 第二阶段：Go应用构建
 FROM golang:1.21-alpine AS go-builder
 
+# 配置Go代理（解决网络问题）
+ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct
+ENV GOSUMDB=sum.golang.google.cn
+ENV GO111MODULE=on
+
 # 安装构建依赖
-RUN apk add --no-cache git ca-certificates
+# git ca-certificates 在alpine基础镜像中通常已存在或作为golang的一部分被依赖，如果构建失败再取消注释git
+RUN apk add --no-cache ca-certificates # git
 
 WORKDIR /app
 
@@ -38,10 +44,11 @@ COPY internal/ ./internal/
 
 # 构建应用
 ARG VERSION=1.0.2
-ARG BUILD_TIME
-ARG GIT_COMMIT
-
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+ARG GIT_COMMIT # GIT_COMMIT 将作为构建参数传入
+RUN BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && \
+    echo "Build Time: ${BUILD_TIME}" && \
+    echo "Git Commit: ${GIT_COMMIT}" && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s -extldflags '-static' \
               -X main.Version=${VERSION} \
               -X main.BuildTime=${BUILD_TIME} \
