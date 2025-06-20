@@ -8,10 +8,28 @@ echo "🚀 开始构建SSL证书管理系统Go版本生产包"
 echo "=================================================="
 
 # 设置版本信息
-VERSION="1.0.2"
-BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+VERSION="${VERSION:-1.0.2}"
+BUILD_TIME="${BUILD_TIME:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}"
+
+# 尝试获取Git提交哈希（生产环境可能没有.git目录）
+if [ -z "$GIT_COMMIT" ]; then
+    if command -v git &> /dev/null && git rev-parse --git-dir > /dev/null 2>&1; then
+        GIT_COMMIT=$(git rev-parse --short HEAD)
+        echo "ℹ️  从Git获取提交哈希: $GIT_COMMIT"
+    else
+        GIT_COMMIT="unknown"
+        echo "⚠️  Git不可用或不在Git仓库中，使用默认值: $GIT_COMMIT"
+    fi
+fi
+
 GO_VERSION=$(go version | awk '{print $3}')
+
+# 生成版本信息文件（用于Docker构建）
+if [ -f "scripts/generate-version-info.sh" ]; then
+    echo "📝 生成版本信息文件..."
+    chmod +x scripts/generate-version-info.sh
+    ./scripts/generate-version-info.sh -f -v "$VERSION" -c "$GIT_COMMIT" -t "$BUILD_TIME"
+fi
 
 echo "📋 构建信息:"
 echo "   版本: $VERSION"

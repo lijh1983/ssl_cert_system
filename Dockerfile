@@ -27,8 +27,7 @@ ENV GOSUMDB=sum.golang.google.cn
 ENV GO111MODULE=on
 
 # 安装构建依赖
-# git ca-certificates 在alpine基础镜像中通常已存在或作为golang的一部分被依赖，如果构建失败再取消注释git
-RUN apk add --no-cache ca-certificates # git
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
@@ -44,8 +43,12 @@ COPY internal/ ./internal/
 
 # 构建应用
 ARG VERSION=1.0.2
-ARG GIT_COMMIT # GIT_COMMIT 将作为构建参数传入
-RUN BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && \
+ARG BUILD_TIME
+ARG GIT_COMMIT=unknown
+
+# 设置构建时间（如果没有通过参数传入）
+RUN BUILD_TIME="${BUILD_TIME:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}" && \
+    echo "Version: ${VERSION}" && \
     echo "Build Time: ${BUILD_TIME}" && \
     echo "Git Commit: ${GIT_COMMIT}" && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \

@@ -16,9 +16,9 @@ services:
       context: .
       dockerfile: Dockerfile.app
       args:
-        VERSION: "1.0.2"
-        BUILD_TIME: "${BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
-        GIT_COMMIT: "${GIT_COMMIT:-$(git rev-parse --short HEAD)}"
+        VERSION: "${VERSION:-1.0.2}"
+        BUILD_TIME: "${BUILD_TIME:-unknown}"
+        GIT_COMMIT: "${GIT_COMMIT:-unknown}"
     depends_on:
       - ssl-cert-system-base
     container_name: ssl-cert-system-go

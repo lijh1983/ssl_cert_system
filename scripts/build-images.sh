@@ -106,6 +106,11 @@ build_app_image() {
         build_args="--no-cache"
     fi
     
+    # 确保GIT_COMMIT是实际的提交哈希，而不是命令字符串
+    if [ "$GIT_COMMIT" = '$(git rev-parse --short HEAD)' ] || [ -z "$GIT_COMMIT" ]; then
+        GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
+    fi
+
     docker build $build_args \
         -f Dockerfile.app \
         --build-arg VERSION="$VERSION" \

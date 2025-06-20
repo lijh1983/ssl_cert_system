@@ -60,31 +60,58 @@ MYSQL_ROOT_PASSWORD=your_mysql_root_password
 
 #### 3. 选择部署方式并启动服务
 
-**方式1: 本地开发环境 (包含MySQL)**
+> **🔧 构建优化**: 系统已优化Docker构建流程，支持无Git环境构建，解决了构建参数传递问题。
+
+**方式1: 快速构建脚本 (推荐)**
 ```bash
-# 启动完整环境 (包含MySQL数据库)
+# 一键构建和启动 (本地开发)
+./scripts/quick-build.sh
+
+# 使用快速部署配置
+./scripts/quick-build.sh -f
+
+# 后台运行
+./scripts/quick-build.sh -d
+
+# 指定版本号
+./scripts/quick-build.sh -v 1.0.3
+```
+
+**方式2: 智能构建脚本**
+```bash
+# 自动处理环境变量和版本信息
+./scripts/docker-compose-build.sh
+
+# 使用快速部署配置
+./scripts/docker-compose-build.sh -f docker-compose.fast.yml
+
+# 强制重新构建并后台运行
+./scripts/docker-compose-build.sh -b -d
+```
+
+**方式3: 传统Docker Compose**
+```bash
+# 本地开发环境 (包含MySQL)
 docker-compose up -d
 
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f ssl-cert-system
-```
-
-**方式2: 生产环境 (使用远程数据库)**
-```bash
-# 配置远程数据库连接
-# 编辑 .env 文件，设置 DB_HOST 为远程数据库地址
-
-# 启动服务 (不包含MySQL)
+# 生产环境 (使用远程数据库)
 docker-compose -f docker-compose.remote-db.yml up -d
+
+# 快速部署 (使用预构建镜像)
+docker-compose -f docker-compose.fast.yml up -d
 ```
 
-**方式3: 快速部署 (使用预构建镜像)**
+**方式4: 自定义版本信息**
 ```bash
-# 适用于网络受限环境
-docker-compose -f docker-compose.fast.yml up -d
+# 设置版本信息
+export VERSION=1.0.3
+export GIT_COMMIT=release-build
+export BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+# 构建
+./scripts/quick-build.sh
+# 或
+docker-compose up --build
 ```
 
 ### 方式2: 原生部署 (传统服务器)
@@ -106,6 +133,9 @@ sudo ./scripts/install-native.sh
 
 #### 4. 验证部署
 ```bash
+# 检查应用版本信息
+docker run --rm ssl-cert-system:latest ./ssl-cert-system -version
+
 # 检查前端访问
 curl http://localhost/
 
@@ -117,6 +147,12 @@ curl http://localhost:3001/health
 
 # 检查API接口
 curl http://localhost/api
+
+# 查看服务状态
+docker-compose ps
+
+# 查看应用日志
+docker-compose logs -f ssl-cert-system
 ```
 
 ## 🔧 生产环境部署
@@ -252,6 +288,23 @@ df -h
 ## 🔄 更新和维护
 
 ### 应用更新
+
+#### 方式1: 使用构建脚本 (推荐)
+```bash
+# 拉取最新代码
+git pull origin main
+
+# 停止现有服务
+docker-compose down
+
+# 使用快速构建脚本重新构建
+./scripts/quick-build.sh -d
+
+# 或使用智能构建脚本
+./scripts/docker-compose-build.sh -b -d
+```
+
+#### 方式2: 传统方式
 ```bash
 # 拉取最新代码
 git pull origin main
@@ -260,6 +313,16 @@ git pull origin main
 docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
+```
+
+#### 方式3: 指定版本更新
+```bash
+# 设置新版本
+export VERSION=1.0.4
+export GIT_COMMIT=update-$(date +%Y%m%d)
+
+# 构建新版本
+./scripts/quick-build.sh -v $VERSION
 ```
 
 ### 数据库维护
@@ -283,16 +346,34 @@ curl -X POST http://localhost:3001/api/admin/cleanup
 
 ### 常见问题
 
-#### 1. 容器启动失败
+#### 1. Docker构建失败
+```bash
+# 问题: Git提交哈希获取失败
+# 解决: 使用简化构建脚本
+./scripts/quick-build.sh
+
+# 或手动设置版本信息
+export VERSION=1.0.2
+export GIT_COMMIT=manual-build
+docker-compose up --build
+
+# 查看构建日志
+docker-compose build ssl-cert-system
+```
+
+#### 2. 容器启动失败
 ```bash
 # 查看详细错误信息
 docker-compose logs ssl-cert-system
 
 # 检查端口占用
 sudo netstat -tlnp | grep :3001
+
+# 检查Docker服务状态
+sudo systemctl status docker
 ```
 
-#### 2. 数据库连接失败
+#### 3. 数据库连接失败
 ```bash
 # 检查数据库容器状态
 docker-compose ps mysql
@@ -301,7 +382,7 @@ docker-compose ps mysql
 docker-compose exec mysql mysql -u ssl_manager -p ssl_cert_system
 ```
 
-#### 3. 证书申请失败
+#### 4. 证书申请失败
 ```bash
 # 检查ACME配置
 curl -X GET http://localhost:3001/api/monitors/health
@@ -310,7 +391,7 @@ curl -X GET http://localhost:3001/api/monitors/health
 docker-compose logs ssl-cert-system | grep -i acme
 ```
 
-#### 4. 内存不足
+#### 5. 内存不足
 ```bash
 # 检查内存使用
 free -h
@@ -368,10 +449,118 @@ curl -X GET http://localhost:3001/api/monitors/health
 5. **监控日志**: 定期检查异常访问和错误日志
 6. **更新依赖**: 定期更新Docker镜像和依赖包
 
+## 🛠️ 构建脚本说明
+
+### 可用的构建脚本
+
+| 脚本名称 | 用途 | 特点 |
+|---------|------|------|
+| `scripts/quick-build.sh` | 快速构建 | 简单易用，适合开发阶段 |
+| `scripts/docker-compose-build.sh` | 智能构建 | 自动处理环境变量，功能完整 |
+| `scripts/build-images.sh` | 镜像构建 | 专门用于构建Docker镜像 |
+| `scripts/build-production.sh` | 生产构建 | 生产环境专用，包含完整打包 |
+
+### 构建脚本使用示例
+
+#### 快速构建脚本
+```bash
+# 查看帮助
+./scripts/quick-build.sh -h
+
+# 基本构建
+./scripts/quick-build.sh
+
+# 快速部署配置
+./scripts/quick-build.sh -f
+
+# 后台运行
+./scripts/quick-build.sh -d
+
+# 指定版本
+./scripts/quick-build.sh -v 1.0.3
+```
+
+#### 智能构建脚本
+```bash
+# 查看帮助
+./scripts/docker-compose-build.sh -h
+
+# 基本构建
+./scripts/docker-compose-build.sh
+
+# 使用特定配置文件
+./scripts/docker-compose-build.sh -f docker-compose.fast.yml
+
+# 强制重新构建
+./scripts/docker-compose-build.sh -b
+
+# 后台运行
+./scripts/docker-compose-build.sh -d
+
+# 停止服务
+./scripts/docker-compose-build.sh -s
+```
+
+### 环境变量说明
+
+构建过程中支持以下环境变量：
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `VERSION` | 1.0.2 | 应用版本号 |
+| `BUILD_TIME` | 当前时间 | 构建时间戳 |
+| `GIT_COMMIT` | unknown | Git提交哈希 |
+
+#### 设置环境变量示例
+```bash
+# 方式1: 导出环境变量
+export VERSION=1.0.3
+export GIT_COMMIT=release-build
+./scripts/quick-build.sh
+
+# 方式2: 临时设置
+VERSION=1.0.3 GIT_COMMIT=release-build ./scripts/quick-build.sh
+
+# 方式3: 使用脚本参数
+./scripts/quick-build.sh -v 1.0.3
+```
+
+### 构建问题解决
+
+#### 常见构建错误及解决方案
+
+**错误1: Git提交哈希获取失败**
+```bash
+# 错误信息: echo "Git Commit: $(git rev-parse --short HEAD)"
+# 解决方案: 使用简化构建脚本
+./scripts/quick-build.sh
+```
+
+**错误2: Docker Compose构建参数传递失败**
+```bash
+# 错误信息: 构建参数为字面字符串
+# 解决方案: 使用构建脚本设置环境变量
+./scripts/docker-compose-build.sh
+```
+
+**错误3: 无Git环境构建失败**
+```bash
+# 解决方案: 手动设置版本信息
+export VERSION=1.0.2
+export GIT_COMMIT=manual-build
+docker-compose up --build
+```
+
 ## 📞 技术支持
 
 如果遇到问题，请：
-1. 查看应用日志
-2. 检查系统资源
+1. 查看应用日志: `docker-compose logs ssl-cert-system`
+2. 检查系统资源: `docker stats`
 3. 参考故障排除指南
-4. 提交Issue到GitHub仓库
+4. 查看构建脚本帮助: `./scripts/quick-build.sh -h`
+5. 提交Issue到GitHub仓库
+
+### 相关文档
+- `DOCKER_BUILD_SIMPLE.md` - Docker构建问题详细解决方案
+- `DEPLOYMENT_NATIVE.md` - 原生部署指南
+- `QUICK_START.md` - 快速开始指南
